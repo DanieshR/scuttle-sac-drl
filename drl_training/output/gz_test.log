@@ -1,0 +1,41 @@
+[INFO] [launch]: All log files can be found below /root/.ros/log/2026-05-31-10-06-06-964323-daniesh-Legion-Pro-5-16ARX8-72
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [gzserver-1]: process started with pid [74]
+[INFO] [gzclient-2]: process started with pid [76]
+[INFO] [robot_state_publisher-3]: process started with pid [78]
+[robot_state_publisher-3] [WARN] [1780221967.378638847] [robot_state_publisher]: No robot_description parameter, but command-line argument available.  Assuming argument is name of URDF file.  This backwards compatibility fallback will be removed in the future.
+[robot_state_publisher-3] [INFO] [1780221967.381095375] [robot_state_publisher]: got segment base_link
+[robot_state_publisher-3] [INFO] [1780221967.381115559] [robot_state_publisher]: got segment base_scan
+[robot_state_publisher-3] [INFO] [1780221967.381126245] [robot_state_publisher]: got segment chassis_link
+[robot_state_publisher-3] [INFO] [1780221967.381135743] [robot_state_publisher]: got segment l_caster_swivel
+[robot_state_publisher-3] [INFO] [1780221967.381142867] [robot_state_publisher]: got segment l_caster_wheel
+[robot_state_publisher-3] [INFO] [1780221967.381152366] [robot_state_publisher]: got segment l_wheel
+[robot_state_publisher-3] [INFO] [1780221967.381160677] [robot_state_publisher]: got segment r_caster_swivel
+[robot_state_publisher-3] [INFO] [1780221967.381170175] [robot_state_publisher]: got segment r_caster_wheel
+[robot_state_publisher-3] [INFO] [1780221967.381178486] [robot_state_publisher]: got segment r_wheel
+[gzserver-1] amdgpu: os_same_file_description couldn't determine if two DRM fds reference the same file description.
+[gzserver-1] If they do, bad things may happen!
+[gzserver-1] amdgpu: drmGetDevice2 failed.
+[gzserver-1] ALSA lib confmisc.c:855:(parse_card) cannot find card '0'
+[gzserver-1] ALSA lib conf.c:5178:(_snd_config_evaluate) function snd_func_card_inum returned error: No such file or directory
+[gzserver-1] ALSA lib confmisc.c:422:(snd_func_concat) error evaluating strings
+[gzserver-1] ALSA lib conf.c:5178:(_snd_config_evaluate) function snd_func_concat returned error: No such file or directory
+[gzserver-1] ALSA lib confmisc.c:1334:(snd_func_refer) error evaluating name
+[gzserver-1] ALSA lib conf.c:5178:(_snd_config_evaluate) function snd_func_refer returned error: No such file or directory
+[gzserver-1] ALSA lib conf.c:5701:(snd_config_expand) Evaluate error: No such file or directory
+[gzserver-1] ALSA lib pcm.c:2664:(snd_pcm_open_noupdate) Unknown PCM default
+[gzserver-1] AL lib: (EE) ALCplaybackAlsa_open: Could not open playback device 'default': No such file or directory
+[gzserver-1] [WARN] [1780221967.951495402] [rcl]: Found remap rule '~/out:=/scan'. This syntax is deprecated. Use '--ros-args --remap ~/out:=/scan' instead.
+[gzserver-1] [WARN] [1780221967.953386774] [rcl]: Found remap rule '~/out:=/scan'. This syntax is deprecated. Use '--ros-args --remap ~/out:=/scan' instead.
+[gzserver-1] [INFO] [1780221967.964092676] [diff_drive_controller]: Wheel pair 1 separation set to [0.424700m]
+[gzserver-1] [INFO] [1780221967.964184098] [diff_drive_controller]: Wheel pair 1 diameter set to [0.083300m]
+[gzserver-1] [INFO] [1780221967.964609152] [diff_drive_controller]: Subscribed to [/cmd_vel]
+[gzserver-1] [INFO] [1780221967.965572054] [diff_drive_controller]: Advertise odometry on [/odom]
+[gzserver-1] [INFO] [1780221967.966841280] [diff_drive_controller]: Publishing odom transforms between [odom] and [base_footprint]
+[gzserver-1] [WARN] [1780221967.969417725] [rcl]: Found remap rule '~/out:=/joint_states'. This syntax is deprecated. Use '--ros-args --remap ~/out:=/joint_states' instead.
+[gzserver-1] [INFO] [1780221967.971908684] [joint_state_publisher]: Going to publish joint [l_wheel_joint]
+[gzserver-1] [INFO] [1780221967.971931243] [joint_state_publisher]: Going to publish joint [r_wheel_joint]
+[gzserver-1] [WARN] [1780221967.971956177] [rcl]: Found remap rule '~/out:=/joint_states'. This syntax is deprecated. Use '--ros-args --remap ~/out:=/joint_states' instead.
+[gzclient-2] amdgpu: os_same_file_description couldn't determine if two DRM fds reference the same file description.
+[gzclient-2] If they do, bad things may happen!
+[gzclient-2] amdgpu: drmGetDevice2 failed.

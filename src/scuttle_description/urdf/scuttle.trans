@@ -1,0 +1,76 @@
+<?xml version="1.0"?>
+<robot name="scuttle" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Left wheel joint transmission (velocity-controlled) -->
+  <transmission name="l_wheel_joint_tran">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="l_wheel_joint">
+      <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="l_wheel_joint_actr">
+      <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <!-- Right wheel joint transmission (velocity-controlled) -->
+  <transmission name="r_wheel_joint_tran">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="r_wheel_joint">
+      <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="r_wheel_joint_actr">
+      <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <!-- Right caster swivel (passive) -->
+  <transmission name="r_caster_swivel_joint_tran">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="r_caster_swivel_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="r_caster_swivel_joint_actr">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <!-- Left caster swivel (passive) -->
+  <transmission name="l_caster_swivel_joint_tran">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="l_caster_swivel_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="l_caster_swivel_joint_actr">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <!-- Right caster wheel (passive) -->
+  <transmission name="r_caster_wheel_joint_tran">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="r_caster_wheel_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="r_caster_wheel_joint_actr">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <!-- Left caster wheel (passive) -->
+  <transmission name="l_caster_wheel_joint_tran">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="l_caster_wheel_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="l_caster_wheel_joint_actr">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+</robot>

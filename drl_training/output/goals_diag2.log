@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/home/turtlebot3_drlnav/install/turtlebot3_drl/lib/turtlebot3_drl/gazebo_goals", line 33, in <module>
+    sys.exit(load_entry_point('turtlebot3-drl', 'console_scripts', 'gazebo_goals')())
+  File "/home/turtlebot3_drlnav/build/turtlebot3_drl/turtlebot3_drl/drl_gazebo/drl_gazebo.py", line 263, in main
+    drl_gazebo = DRLGazebo()
+  File "/home/turtlebot3_drlnav/build/turtlebot3_drl/turtlebot3_drl/drl_gazebo/drl_gazebo.py", line 51, in __init__
+    self.entity = open(self.entity_path, 'r').read()
+FileNotFoundError: [Errno 2] No such file or directory: '/home/turtlebot3_drlnav/src/turtlebot3_drl/turtlebot3_drl/drl_gazebo/model.sdf'
+[ros2run]: Process exited with failure 1

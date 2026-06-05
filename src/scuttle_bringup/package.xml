@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>scuttle_bringup</name>
+  <version>1.0.0</version>
+  <description>Launch files to bring up SCUTTLE robot in simulation or real hardware</description>
+  <maintainer email="your_email@example.com">Your Name</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Launch system dependencies -->
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+
+  <!-- Robot packages -->
+  <exec_depend>scuttle_description</exec_depend>
+  <exec_depend>scuttle_gazebo</exec_depend>
+  
+  <!-- ROS2 Control -->
+  <exec_depend>controller_manager</exec_depend>
+  <exec_depend>diff_drive_controller</exec_depend>
+  <exec_depend>joint_state_broadcaster</exec_depend>
+  
+  <!-- Robot State Publisher -->
+  <exec_depend>robot_state_publisher</exec_depend>
+  
+  <!-- RPLidar (for real hardware) -->
+  <exec_depend>rplidar_ros</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

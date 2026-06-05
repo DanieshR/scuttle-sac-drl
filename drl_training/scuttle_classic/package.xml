@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>scuttle_description</name>
+  <version>1.0.0</version>
+  <description>SCUTTLE robot description for Gazebo Classic (gazebo11) DRL training</description>
+  <maintainer email="daniesh@example.com">daniesh</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>robot_state_publisher</depend>
+  <depend>xacro</depend>
+  <depend>gazebo_ros</depend>
+  <depend>gazebo_plugins</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+    <gazebo_ros gazebo_model_path="${prefix}/models"/>
+  </export>
+</package>

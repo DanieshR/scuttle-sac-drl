@@ -1,0 +1,7 @@
+initial /odom: (-0.0004, 0.0)
+/scan received: True | len: 60 | min: 2.084
+>>> commanding cmd_vel linear.x=0.3 angular.z=0.5 for 8s ...
+final   /odom: (-0.5032, 0.9025)
+final   /scan min: 1.731
+ODOM delta: 1.4053 => ROBOT MOVED ✓
+SCAN changed buckets: 60 / 60 => SCAN LIVE ✓

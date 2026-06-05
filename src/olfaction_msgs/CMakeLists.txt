@@ -1,0 +1,22 @@
+cmake_minimum_required(VERSION 3.5)
+project(olfaction_msgs)
+
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
+
+find_package(ament_cmake REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+## Generate messages and services
+rosidl_generate_interfaces(${PROJECT_NAME}
+	"msg/Anemometer.msg"
+	"msg/GasSensor.msg"
+	"msg/GasSensorArray.msg"
+	"msg/TDLAS.msg"
+  	DEPENDENCIES std_msgs   # Add packages that above messages depend on
+)
+
+ament_package()

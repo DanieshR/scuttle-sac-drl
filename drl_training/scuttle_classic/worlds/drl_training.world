@@ -1,0 +1,207 @@
+<?xml version="1.0" ?>
+<!--
+  DRL Training World — SCUTTLE Robot (Gazebo Classic / gazebo11)
+  10×10 m room, 8 box obstacles (obstacle1–obstacle8).
+  Coordinate range: x,y ∈ [-4, +4].
+  Model named "scuttle" so /gazebo/set_model_state can teleport it.
+-->
+<sdf version="1.6">
+  <world name="drl_training">
+
+    <!-- libgazebo_ros_state.so provides /gazebo/set_entity_state (used by ros_nodes.py SetModelStateClient) -->
+    <plugin name="gazebo_ros_state" filename="libgazebo_ros_state.so">
+      <ros>
+        <namespace>/gazebo</namespace>
+      </ros>
+      <update_rate>1.0</update_rate>
+    </plugin>
+
+    <!-- SCUTTLE robot — native SDF model, no URDF conversion needed -->
+    <include>
+      <uri>model://scuttle</uri>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+
+    <!-- Gazebo Classic built-ins -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <physics name="default_physics" type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+
+    <!-- ── 10×10 m room walls (inner edge ±4.925 m) ───────────────── -->
+    <model name="walls">
+      <static>true</static>
+      <link name="wall_north">
+        <pose>0 4.925 1.25 0 0 0</pose>
+        <collision name="col">
+          <geometry><box><size>10 0.15 2.5</size></box></geometry>
+        </collision>
+        <visual name="vis">
+          <geometry><box><size>10 0.15 2.5</size></box></geometry>
+          <material><script><name>Gazebo/Grey</name></script></material>
+        </visual>
+      </link>
+      <link name="wall_south">
+        <pose>0 -4.925 1.25 0 0 0</pose>
+        <collision name="col">
+          <geometry><box><size>10 0.15 2.5</size></box></geometry>
+        </collision>
+        <visual name="vis">
+          <geometry><box><size>10 0.15 2.5</size></box></geometry>
+          <material><script><name>Gazebo/Grey</name></script></material>
+        </visual>
+      </link>
+      <link name="wall_east">
+        <pose>4.925 0 1.25 0 0 0</pose>
+        <collision name="col">
+          <geometry><box><size>0.15 10 2.5</size></box></geometry>
+        </collision>
+        <visual name="vis">
+          <geometry><box><size>0.15 10 2.5</size></box></geometry>
+          <material><script><name>Gazebo/Grey</name></script></material>
+        </visual>
+      </link>
+      <link name="wall_west">
+        <pose>-4.925 0 1.25 0 0 0</pose>
+        <collision name="col">
+          <geometry><box><size>0.15 10 2.5</size></box></geometry>
+        </collision>
+        <visual name="vis">
+          <geometry><box><size>0.15 10 2.5</size></box></geometry>
+          <material><script><name>Gazebo/Grey</name></script></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ── Fixed obstacles 1–4 ──────────────────────────────────────── -->
+    <model name="obstacle1">
+      <pose>-2.93 3.17 0.25 0 0 0</pose>
+      <static>false</static>
+      <link name="link">
+        <inertial><mass>5.0</mass></inertial>
+        <collision name="col">
+          <geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+        </collision>
+        <visual name="vis">
+          <geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+          <material><script><name>Gazebo/Blue</name></script></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="obstacle2">
+      <pose>2.86 -3.0 0.25 0 0 0</pose>
+      <static>false</static>
+      <link name="link">
+        <inertial><mass>5.0</mass></inertial>
+        <collision name="col">
+          <geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+        </collision>
+        <visual name="vis">
+          <geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+          <material><script><name>Gazebo/Blue</name></script></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="obstacle3">
+      <pose>-2.77 -0.96 0.25 0 0 0</pose>
+      <static>false</static>
+      <link name="link">
+        <inertial><mass>5.0</mass></inertial>
+        <collision name="col">
+          <geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+        </collision>
+        <visual name="vis">
+          <geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+          <material><script><name>Gazebo/Blue</name></script></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="obstacle4">
+      <pose>2.83 2.93 0.25 0 0 0</pose>
+      <static>false</static>
+      <link name="link">
+        <inertial><mass>5.0</mass></inertial>
+        <collision name="col">
+          <geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+        </collision>
+        <visual name="vis">
+          <geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+          <material><script><name>Gazebo/Blue</name></script></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ── Random obstacles 5–8 (randomised each episode by ros_python.py) -->
+    <model name="obstacle5">
+      <pose>0.0 2.0 0.25 0 0 0</pose>
+      <static>false</static>
+      <link name="link">
+        <inertial><mass>5.0</mass></inertial>
+        <collision name="col">
+          <geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+        </collision>
+        <visual name="vis">
+          <geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+          <material><script><name>Gazebo/Orange</name></script></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="obstacle6">
+      <pose>-1.5 -2.5 0.25 0 0 0</pose>
+      <static>false</static>
+      <link name="link">
+        <inertial><mass>5.0</mass></inertial>
+        <collision name="col">
+          <geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+        </collision>
+        <visual name="vis">
+          <geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+          <material><script><name>Gazebo/Orange</name></script></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="obstacle7">
+      <pose>2.0 0.5 0.25 0 0 0</pose>
+      <static>false</static>
+      <link name="link">
+        <inertial><mass>5.0</mass></inertial>
+        <collision name="col">
+          <geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+        </collision>
+        <visual name="vis">
+          <geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+          <material><script><name>Gazebo/Orange</name></script></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="obstacle8">
+      <pose>-0.5 1.0 0.25 0 0 0</pose>
+      <static>false</static>
+      <link name="link">
+        <inertial><mass>5.0</mass></inertial>
+        <collision name="col">
+          <geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+        </collision>
+        <visual name="vis">
+          <geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+          <material><script><name>Gazebo/Orange</name></script></material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>

@@ -1,0 +1,92 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <world name="multi_room_house">
+    
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"></plugin>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre</render_engine> </plugin>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"></plugin>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"></plugin>
+    <plugin filename="libGasSourcePlugin.so" name="gas_mapping::GasSourcePlugin">
+      <gas_source_x>3.5</gas_source_x>
+      <gas_source_y>-3.5</gas_source_y>
+    </plugin>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry>
+          <material><ambient>0.8 0.8 0.8 1</ambient><diffuse>0.8 0.8 0.8 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="house_walls">
+      <static>true</static>
+      
+      <link name="wall_1">
+        <pose>0 5 1 0 0 0</pose>
+        <collision name="c1"><geometry><box><size>10.0 0.2 2.0</size></box></geometry></collision>
+        <visual name="v1"><geometry><box><size>10.0 0.2 2.0</size></box></geometry><material><diffuse>0.7 0.7 0.7 1</diffuse></material></visual>
+      </link>
+
+      <link name="wall_2">
+        <pose>0 -5 1 0 0 0</pose>
+        <collision name="c2"><geometry><box><size>10.0 0.2 2.0</size></box></geometry></collision>
+        <visual name="v2"><geometry><box><size>10.0 0.2 2.0</size></box></geometry><material><diffuse>0.7 0.7 0.7 1</diffuse></material></visual>
+      </link>
+
+      <link name="wall_3">
+        <pose>-5 0 1 0 0 0</pose>
+        <collision name="c3"><geometry><box><size>0.2 10.0 2.0</size></box></geometry></collision>
+        <visual name="v3"><geometry><box><size>0.2 10.0 2.0</size></box></geometry><material><diffuse>0.7 0.7 0.7 1</diffuse></material></visual>
+      </link>
+
+      <link name="wall_4">
+        <pose>2 2 1 0 0 0</pose>
+        <collision name="c4"><geometry><box><size>0.2 6.0 2.0</size></box></geometry></collision>
+        <visual name="v4"><geometry><box><size>0.2 6.0 2.0</size></box></geometry><material><diffuse>0.8 0.4 0.4 1</diffuse></material></visual>
+      </link>
+      
+      <link name="table">
+        <pose>-2 -2 0.5 0 0 0</pose>
+        <collision name="c_table"><geometry><box><size>1.5 1.0 1.0</size></box></geometry></collision>
+        <visual name="v_table"><geometry><box><size>1.5 1.0 1.0</size></box></geometry><material><diffuse>0.4 0.2 0.1 1</diffuse></material></visual>
+      </link>
+
+    </model>
+
+    <model name="gas_source_marker">
+      <static>true</static>
+      <pose>3.5 -3.5 0.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.3</radius></sphere></geometry>
+          <material>
+            <ambient>1 0 0 1</ambient>
+            <diffuse>1 0 0 1</diffuse>
+            <emissive>1 0 0 1</emissive>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>

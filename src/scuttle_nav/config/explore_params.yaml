@@ -1,0 +1,25 @@
+/**:
+  ros__parameters:
+    robot_base_frame: base_link
+    costmap_topic: map
+    costmap_updates_topic: map_updates
+    visualize: true
+
+    # How often to recompute the next frontier goal (Hz)
+    planner_frequency: 0.33
+
+    # Give up on a frontier if no progress made in this time (s)
+    progress_timeout: 60.0
+
+    # Frontier scoring weights
+    potential_scale: 3.0   # prefer closer frontiers
+    gain_scale: 1.0        # prefer larger frontiers
+    orientation_scale: 0.0 # ignore orientation cost
+
+    # Ignore frontiers narrower than this (m) — SCUTTLE radius 0.22 m
+    min_frontier_size: 0.75
+
+    transform_tolerance: 0.5
+
+    # Return to starting position when exploration completes
+    return_to_init: true

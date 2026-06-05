@@ -1,0 +1,183 @@
+<?xml version="1.0" ?>
+<!--
+  DRL Training World — SCUTTLE Robot
+  10×10 m room, 8 box obstacles named obstacle1–obstacle8.
+  Coordinate range used by ros_python.py: x,y ∈ [-4, +4].
+  World name "drl_training" is used by the gz set_pose service path:
+    /world/drl_training/set_pose
+-->
+<sdf version="1.8">
+  <world name="drl_training">
+
+    <!-- Required gz-sim plugins -->
+    <plugin filename="gz-sim-physics-system"        name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-sensors-system"        name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-user-commands-system"  name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <!-- Ground plane -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal><size>20 20</size></plane></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>20 20</size></plane></geometry>
+          <material>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- 10×10 m room walls (inner edge at ±4.925 m) -->
+    <model name="walls">
+      <static>true</static>
+      <!-- North wall -->
+      <link name="wall_north">
+        <pose>0 4.925 1.25 0 0 0</pose>
+        <collision name="col"><geometry><box><size>10 0.15 2.5</size></box></geometry></collision>
+        <visual    name="vis"><geometry><box><size>10 0.15 2.5</size></box></geometry>
+          <material><ambient>0.7 0.7 0.7 1</ambient><diffuse>0.7 0.7 0.7 1</diffuse></material>
+        </visual>
+      </link>
+      <!-- South wall -->
+      <link name="wall_south">
+        <pose>0 -4.925 1.25 0 0 0</pose>
+        <collision name="col"><geometry><box><size>10 0.15 2.5</size></box></geometry></collision>
+        <visual    name="vis"><geometry><box><size>10 0.15 2.5</size></box></geometry>
+          <material><ambient>0.7 0.7 0.7 1</ambient><diffuse>0.7 0.7 0.7 1</diffuse></material>
+        </visual>
+      </link>
+      <!-- East wall -->
+      <link name="wall_east">
+        <pose>4.925 0 1.25 0 0 0</pose>
+        <collision name="col"><geometry><box><size>0.15 10 2.5</size></box></geometry></collision>
+        <visual    name="vis"><geometry><box><size>0.15 10 2.5</size></box></geometry>
+          <material><ambient>0.7 0.7 0.7 1</ambient><diffuse>0.7 0.7 0.7 1</diffuse></material>
+        </visual>
+      </link>
+      <!-- West wall -->
+      <link name="wall_west">
+        <pose>-4.925 0 1.25 0 0 0</pose>
+        <collision name="col"><geometry><box><size>0.15 10 2.5</size></box></geometry></collision>
+        <visual    name="vis"><geometry><box><size>0.15 10 2.5</size></box></geometry>
+          <material><ambient>0.7 0.7 0.7 1</ambient><diffuse>0.7 0.7 0.7 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ───────────────────────────────────────────────────────────────
+         Obstacles 1–4: fixed positions (matching original DRL world)
+         Obstacles 5–8: randomised each episode by ros_python.py
+         All are 0.5×0.5×0.5 m boxes; z=0.25 so they sit on the floor.
+    ─────────────────────────────────────────────────────────────────── -->
+
+    <model name="obstacle1">
+      <pose>-2.93 3.17 0.25 0 0 0</pose>
+      <link name="link">
+        <inertial><mass>5.0</mass></inertial>
+        <collision name="col"><geometry><box><size>0.5 0.5 0.5</size></box></geometry></collision>
+        <visual    name="vis"><geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+          <material><ambient>0.2 0.2 0.8 1</ambient><diffuse>0.2 0.2 0.8 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="obstacle2">
+      <pose>2.86 -3.0 0.25 0 0 0</pose>
+      <link name="link">
+        <inertial><mass>5.0</mass></inertial>
+        <collision name="col"><geometry><box><size>0.5 0.5 0.5</size></box></geometry></collision>
+        <visual    name="vis"><geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+          <material><ambient>0.2 0.2 0.8 1</ambient><diffuse>0.2 0.2 0.8 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="obstacle3">
+      <pose>-2.77 -0.96 0.25 0 0 0</pose>
+      <link name="link">
+        <inertial><mass>5.0</mass></inertial>
+        <collision name="col"><geometry><box><size>0.5 0.5 0.5</size></box></geometry></collision>
+        <visual    name="vis"><geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+          <material><ambient>0.2 0.2 0.8 1</ambient><diffuse>0.2 0.2 0.8 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="obstacle4">
+      <pose>2.83 2.93 0.25 0 0 0</pose>
+      <link name="link">
+        <inertial><mass>5.0</mass></inertial>
+        <collision name="col"><geometry><box><size>0.5 0.5 0.5</size></box></geometry></collision>
+        <visual    name="vis"><geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+          <material><ambient>0.2 0.2 0.8 1</ambient><diffuse>0.2 0.2 0.8 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Obstacles 5–8 start off at edges; randomised each episode -->
+    <model name="obstacle5">
+      <pose>0.0 2.0 0.25 0 0 0</pose>
+      <link name="link">
+        <inertial><mass>5.0</mass></inertial>
+        <collision name="col"><geometry><box><size>0.5 0.5 0.5</size></box></geometry></collision>
+        <visual    name="vis"><geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+          <material><ambient>0.8 0.4 0.0 1</ambient><diffuse>0.8 0.4 0.0 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="obstacle6">
+      <pose>-1.5 -2.5 0.25 0 0 0</pose>
+      <link name="link">
+        <inertial><mass>5.0</mass></inertial>
+        <collision name="col"><geometry><box><size>0.5 0.5 0.5</size></box></geometry></collision>
+        <visual    name="vis"><geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+          <material><ambient>0.8 0.4 0.0 1</ambient><diffuse>0.8 0.4 0.0 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="obstacle7">
+      <pose>2.0 0.5 0.25 0 0 0</pose>
+      <link name="link">
+        <inertial><mass>5.0</mass></inertial>
+        <collision name="col"><geometry><box><size>0.5 0.5 0.5</size></box></geometry></collision>
+        <visual    name="vis"><geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+          <material><ambient>0.8 0.4 0.0 1</ambient><diffuse>0.8 0.4 0.0 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="obstacle8">
+      <pose>-0.5 1.0 0.25 0 0 0</pose>
+      <link name="link">
+        <inertial><mass>5.0</mass></inertial>
+        <collision name="col"><geometry><box><size>0.5 0.5 0.5</size></box></geometry></collision>
+        <visual    name="vis"><geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+          <material><ambient>0.8 0.4 0.0 1</ambient><diffuse>0.8 0.4 0.0 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>

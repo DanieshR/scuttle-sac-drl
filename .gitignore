@@ -1,0 +1,73 @@
+# ── ROS2 build artefacts ────────────────────────────────────────────────────
+build/
+install/
+log/
+
+# ── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+*.so
+
+# ── DRL training — large binaries ───────────────────────────────────────────
+# Replay buffers (up to 564 MB each — never commit)
+*.pkl
+
+# Model checkpoints in the Jazzy src workspace (duplicates; canonical copy is in drl_training/)
+src/turtlebot3_drlnav/src/turtlebot3_drl/model/
+
+# All model checkpoints in drl_training EXCEPT the best deployable one
+# Best checkpoint: actor_stage8_episode1300.pt + critics — kept explicitly
+drl_training/src/turtlebot3_drl/model/**/*.pt
+!drl_training/src/turtlebot3_drl/model/**/actor_stage8_episode1300.pt
+!drl_training/src/turtlebot3_drl/model/**/critic_stage8_episode1300.pt
+!drl_training/src/turtlebot3_drl/model/**/critic_target_stage8_episode1300.pt
+
+# Docker layer cache
+drl_training/build/
+drl_training/install/
+drl_training/log/
+
+# TensorBoard event files (large, regeneratable)
+drl_training/output/runs/
+
+# ── ROS2 / Gazebo misc ──────────────────────────────────────────────────────
+*.pyc
+*.pyo
+devel/
+*.bag
+*.db3
+.catkin_workspace
+.catkin_tools/
+
+# ── Compiled C++ ────────────────────────────────────────────────────────────
+*.o
+*.a
+*.lib
+*.dll
+*.dylib
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+
+# ── IDE / OS ────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# ── GDM / sensor data logs ──────────────────────────────────────────────────
+*.csv.bak
+gas_readings.csv
+robot_positions.csv
+
+# ── Planning / session files (internal use) ─────────────────────────────────
+.planning/
+.claude/
+SESSION_HANDOFF*.md
+MONITORING_HANDOFF*.md
