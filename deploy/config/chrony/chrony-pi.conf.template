@@ -1,0 +1,24 @@
+# chrony-pi.conf.template — robot (Pi) syncs to the base station as its time source.
+#
+# The base station's IP changes every hotspot session, so this is a TEMPLATE.
+# Do NOT edit __BASESTATION_IP__ by hand — let apply-chrony.sh fill it:
+#
+#   On the base station:  ./deploy/scripts/whoami-net.sh         # note the IP
+#   On the Pi:            sudo ./deploy/scripts/apply-chrony.sh pi <that-IP>
+#
+# Verify (on the Pi): chronyc tracking      # 'Reference ID' should be the base IP,
+#                     chronyc sources -v     # base station marked '*' (synced)
+# The plan's Phase 1 gate: chronyc tracking on the Pi shows it locked to the base
+# station with a sub-millisecond-ish offset. Do not proceed to Phase 2 until then.
+
+# Prefer the base station; iburst gets a fast initial lock.
+server __BASESTATION_IP__ iburst prefer
+
+# Optional internet fallback if the hotspot has cellular upstream. Harmless if not.
+pool 2.pool.ntp.org iburst maxsources 2
+
+# Step the clock hard on the first few updates (the Pi has no RTC battery and may
+# boot with a wildly wrong time), then slew.
+makestep 1.0 3
+rtcsync
+driftfile /var/lib/chrony/chrony.drift
