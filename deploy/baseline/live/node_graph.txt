@@ -1,0 +1,29 @@
+# Live distributed node graph — 2026-06-18T13:52:02+08:00 — wired zenoh link
+
+## ros2 node list
+/joint_state_publisher
+/launch_ros_11548
+/robot_state_publisher
+/scuttle_base
+/slam_toolbox
+/transform_listener_impl_5e2a76ae49b0
+/ydlidar_ros2_driver_node
+
+## ros2 topic list -t
+/cmd_vel [geometry_msgs/msg/Twist]
+/joint_states [sensor_msgs/msg/JointState]
+/map_metadata [nav_msgs/msg/MapMetaData]
+/map [nav_msgs/msg/OccupancyGrid]
+/odom [nav_msgs/msg/Odometry]
+/parameter_events [rcl_interfaces/msg/ParameterEvent]
+/pose [geometry_msgs/msg/PoseWithCovarianceStamped]
+/robot_description [std_msgs/msg/String]
+/rosout [rcl_interfaces/msg/Log]
+/scan [sensor_msgs/msg/LaserScan]
+/slam_toolbox/feedback [visualization_msgs/msg/InteractiveMarkerFeedback]
+/slam_toolbox/graph_visualization [visualization_msgs/msg/MarkerArray]
+/slam_toolbox/scan_visualization [sensor_msgs/msg/LaserScan]
+/slam_toolbox/transition_event [lifecycle_msgs/msg/TransitionEvent]
+/slam_toolbox/update [visualization_msgs/msg/InteractiveMarkerUpdate]
+/tf_static [tf2_msgs/msg/TFMessage]
+/tf [tf2_msgs/msg/TFMessage]

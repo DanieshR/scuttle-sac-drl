@@ -1,0 +1,16 @@
+digraph G {
+"odom" -> "base_link"[label=" Broadcaster: default_authority\nAverage rate: 19.801\nBuffer length: 5.0\nMost recent transform: 1781761938.837697\nOldest transform: 1781761933.837835\n"];
+"map" -> "odom"[label=" Broadcaster: default_authority\nAverage rate: 10.212\nBuffer length: 4.994\nMost recent transform: 1781761938.918225\nOldest transform: 1781761933.923941\n"];
+"base_link" -> "chassis_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"chassis_link" -> "lidar_1"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"chassis_link" -> "l_caster_swivel"[label=" Broadcaster: default_authority\nAverage rate: 10.2\nBuffer length: 5.0\nMost recent transform: 1781761938.851597\nOldest transform: 1781761933.851644\n"];
+"l_caster_swivel" -> "l_caster_wheel"[label=" Broadcaster: default_authority\nAverage rate: 10.2\nBuffer length: 5.0\nMost recent transform: 1781761938.851597\nOldest transform: 1781761933.851644\n"];
+"chassis_link" -> "l_wheel"[label=" Broadcaster: default_authority\nAverage rate: 10.2\nBuffer length: 5.0\nMost recent transform: 1781761938.851597\nOldest transform: 1781761933.851644\n"];
+"chassis_link" -> "r_caster_swivel"[label=" Broadcaster: default_authority\nAverage rate: 10.2\nBuffer length: 5.0\nMost recent transform: 1781761938.851597\nOldest transform: 1781761933.851644\n"];
+"r_caster_swivel" -> "r_caster_wheel"[label=" Broadcaster: default_authority\nAverage rate: 10.2\nBuffer length: 5.0\nMost recent transform: 1781761938.851597\nOldest transform: 1781761933.851644\n"];
+"chassis_link" -> "r_wheel"[label=" Broadcaster: default_authority\nAverage rate: 10.2\nBuffer length: 5.0\nMost recent transform: 1781761938.851597\nOldest transform: 1781761933.851644\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1781761938.8575318"[ shape=plaintext ] ;
+}->"map";
+}

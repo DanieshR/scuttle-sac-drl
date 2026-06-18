@@ -1,0 +1,7 @@
+# /scan end-to-end delay (header.stamp -> receipt on base station), wired zenoh link
+average delay: 0.100s  (min 0.099 / max 0.101 / std 0.0004, window 130)
+
+INTERPRETATION: ~100ms == the Tmini's 10Hz scan-accumulation period (stamp set at
+scan start, published after the full rotation). This is NOT network latency.
+Network latency is separately measured: ping RTT 0.118ms avg, iperf3 941 Mbit/s 0 retr,
+zenoh transport sub-ms. The link adds negligible delay vs the sensor's own period.
