@@ -70,9 +70,10 @@ Dashboard setMode('auto') ──pub──► /mission/mode ──(Zenoh)──�
 ### Always-on base (auto-started)
 
 - **`deploy/launch/pi_base.launch.py`** = `pi_hardware_bringup` + `pi_mission_supervisor`.
-- **`deploy/launch/laptop_base.launch.py`** = zenoh router (or run separately) + `laptop_slam`
-  + GDM (`map_throttle` + `gmrf_node` + `gmrf_to_grid`) + `scuttle_dashboard` (rosbridge+web)
-  + `laptop_mission_supervisor` + `map_saver` node.
+- **`deploy/launch/laptop_base.launch.py`** = `laptop_slam` + GDM (`map_throttle` +
+  `gmrf_node` + `gmrf_to_grid`) + `scuttle_dashboard` (rosbridge+web) +
+  `laptop_mission_supervisor` + `map_saver` node. (The zenoh router runs as its own
+  systemd service, started before this launch — see Autostart.)
 
 ### Frontier toggle (spawned by supervisors, never run by hand)
 
@@ -118,9 +119,40 @@ Backs `/mission/save_maps` (Trigger). On call:
 5. **Relax boot discovery** (`ros-bindings.js:45`): manual mode has no Nav2/explore yet, so
    require only `slam_toolbox` for "core alive"; show Nav2/explore as "available on frontier".
 
+## Autostart — fully hands-off, no terminal (`deploy/systemd/`)
+
+Goal: power on both machines → entire base comes up → operate solely from the dashboard.
+
+**Pi — system-level services** (headless robot, boot before login):
+- `scuttle-base.service`: `After=network-online.target`; `ExecStart` sources
+  `/opt/ros/jazzy/setup.bash` + `~/ros2_ws/install/setup.bash` + `zenoh-env.sh pi <laptop_ip>`,
+  then `ros2 launch deploy/launch/pi_base.launch.py`. `Restart=always`, `RestartSec=5`.
+  Depends on stable udev names already in place (`/dev/ttyESP32`, `/dev/ttyAIoT`, lidar).
+
+**Laptop — user-level services** (live in the graphical session; `systemctl --user`,
+`loginctl enable-linger` so they start at boot even pre-login):
+- `zenoh-router.service`: `ExecStart` runs the rmw_zenoh router (`rmw_zenohd`).
+- `scuttle-laptop-base.service`: `After=zenoh-router.service`; sources ROS +
+  `zenoh-env.sh base`, runs `ros2 launch deploy/launch/laptop_base.launch.py`
+  (SLAM + GDM + gmrf_to_grid + scuttle_dashboard + supervisor + map_saver). `Restart=always`.
+
+The dashboard is served at `http://localhost:8080`; the operator opens the URL in a browser
+(no kiosk autostart — explicit decision). Frontier/heatmap/save are all driven from the page.
+
+Install via a `deploy/systemd/install.sh` that templates `<laptop_ip>`/paths, copies units,
+`daemon-reload`, and enables. Uninstall script symmetric. Units are templates, not committed
+with machine-specific IPs hardcoded.
+
+**Reliability posture (honest):** unattended in the normal case via `Restart=always`. The
+fragile boot-time dependencies over the phone hotspot are (1) Pi WiFi auto-association
+(NetworkManager autoconnect + `network-online.target`; zenoh peers retry regardless),
+(2) serial enumeration (ride over with `Restart`), (3) mid-mission link loss (watchdog
+asserts `/estop`; services auto-restart on return). systemd cannot power the machines on —
+that single physical action remains the operator's.
+
 ## Out of scope (YAGNI)
 
-- systemd boot persistence — base is started by one `ros2 launch` per machine for now.
+- Kiosk browser autostart — operator opens the served URL manually (explicit decision).
 - SAC DRL frontier — explore_lite only; the SAC swap is a later, one-line include change.
 - Multi-robot — single robot, unchanged.
 - Resumable slam_toolbox pose-graph serialization — only the occupancy grid is saved.
@@ -133,7 +165,11 @@ Backs `/mission/save_maps` (Trigger). On call:
   `OccupancyGrid` on `/gdm/gmrf_gas_map` (origin/resolution/dims sane, values 0–100).
 - **map_saver:** set `/mission/save_path` to a temp dir, call Trigger; assert
   `slam_map.{pgm,yaml}` + `gmrf_gas_map.{pgm,yaml}` + `gmrf_gas.csv` exist under a timestamp.
-- **End-to-end (manual, hotspot):** auto-start both base launches; open dashboard; confirm
+- **Autostart (reboot):** reboot both machines (no terminal); confirm `scuttle-base` (Pi),
+  `zenoh-router` + `scuttle-laptop-base` (laptop) reach `active`, the dashboard answers at
+  `localhost:8080`, and the Pi's `/scan`/`/odom` are visible to the laptop over Zenoh — all
+  without a manual `ros2 launch`.
+- **End-to-end (manual, hotspot):** with both base stacks up, open dashboard; confirm
   manual teleop + heatmap toggle + save; click AUTONOMOUS, confirm Nav2(Pi)+explore(laptop)
   come up via supervisors and the robot explores; click MANUAL, confirm they tear down and
   the base survives.
