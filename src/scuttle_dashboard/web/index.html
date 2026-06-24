@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SCUTTLE-03 · Gas-Detection Operator Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../themes/default.css">
+<style>
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin:0; background:var(--color-bg); color:var(--color-text); font-family:var(--font-sans); font-size:var(--text-sm); -webkit-font-smoothing:antialiased; overflow:hidden; }
+  h1,h2,h3,h4 { margin:0; font-weight:600; }
+  .mono { font-family:var(--font-mono); font-variant-numeric:tabular-nums; }
+  .uplabel { font-size:var(--text-xs); text-transform:uppercase; letter-spacing:.08em; color:var(--color-text-muted); }
+  button { font-family:var(--font-sans); }
+
+  /* ════════ BOOT / CONNECTION ════════ */
+  #boot { position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 50% 20%, rgba(88,166,255,.08), transparent 60%), var(--color-bg); }
+  .boot-panel { width:460px; background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); overflow:hidden; }
+  .boot-panel .bd { padding:24px; text-align:center; }
+  .boot-logo { font-size:46px; }
+  .progress { height:6px; border-radius:var(--radius-full); background:var(--color-elevated); overflow:hidden; margin:18px 0 10px; }
+  .progress > span { display:block; height:100%; width:0; background:linear-gradient(90deg,var(--color-info),var(--color-auto)); transition:width .4s; }
+  #bootStatus { font-family:var(--font-mono); font-size:var(--text-xs); color:var(--color-text-muted); min-height:18px; }
+  .topo { display:flex; align-items:center; justify-content:center; gap:6px; margin:20px 0 6px; padding:14px; background:var(--map-bg); border:1px solid var(--color-border); border-radius:var(--radius-md); }
+  .nbox { flex:1; text-align:center; padding:9px 6px; border:1px solid var(--color-border); border-radius:var(--radius-md); background:var(--color-elevated); position:relative; }
+  .nbox .ic { font-size:20px; } .nbox .nm { font-size:10px; margin-top:3px; font-weight:600; } .nbox .dt { font-size:9px; color:var(--color-text-dim); font-family:var(--font-mono); }
+  .nbox .st { position:absolute; top:5px; right:5px; width:7px; height:7px; border-radius:50%; background:var(--color-text-dim); }
+  .nbox.ok .st { background:var(--color-safe); box-shadow:0 0 6px var(--color-safe); }
+  .nbox.wait .st { background:var(--color-caution); animation:pulse 1s infinite; }
+  .lnk { font-size:9px; color:var(--color-text-muted); } .lnk .l { color:var(--color-info); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ════════ APP SHELL ════════ */
+  #app { display:none; flex-direction:column; height:100%; }
+  #app.live { display:flex; }
+
+  .statusbar { height:54px; flex-shrink:0; display:flex; align-items:center; gap:var(--space-4); padding:0 var(--space-4); background:var(--color-surface); border-bottom:1px solid var(--color-border); }
+  .robot-id { display:flex; align-items:center; gap:8px; font-weight:600; }
+  .live-dot { width:8px; height:8px; border-radius:50%; background:var(--color-info); box-shadow:0 0 8px var(--color-info); animation:pulse 1.8s infinite; }
+  .chip { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:var(--radius-full); font-size:var(--text-xs); border:1px solid var(--color-border); background:var(--color-elevated); color:var(--color-text-muted); white-space:nowrap; }
+  .chip .dot { width:7px; height:7px; border-radius:50%; }
+  .chip.safe{color:var(--color-safe);border-color:rgba(63,185,80,.35)} .chip.safe .dot{background:var(--color-safe)}
+  .chip.caution{color:var(--color-caution);border-color:rgba(210,153,34,.4)} .chip.caution .dot{background:var(--color-caution)}
+  .chip.hazard{color:var(--color-hazard);border-color:rgba(248,81,73,.45)} .chip.hazard .dot{background:var(--color-hazard)}
+  .chip.auto{color:var(--color-auto);border-color:rgba(163,113,247,.4);background:var(--color-auto-bg)} .chip.auto .dot{background:var(--color-auto)}
+  .chip.info{color:var(--color-info);border-color:rgba(88,166,255,.4)} .chip.info .dot{background:var(--color-info)}
+  .spacer { flex:1; }
+  .mode-toggle { display:flex; border:1px solid var(--color-border); border-radius:var(--radius-md); overflow:hidden; }
+  .mode-toggle button { background:transparent; border:0; color:var(--color-text-muted); padding:8px 14px; font-size:var(--text-xs); cursor:pointer; transition:all .15s; }
+  .mode-toggle button.on { background:var(--color-info-bg); color:var(--color-info); }
+  .mode-toggle button.on.autom { background:var(--color-auto-bg); color:var(--color-auto); }
+  .estop { display:inline-flex; flex-direction:column; align-items:center; gap:1px; background:var(--color-hazard); color:#fff; border:2px solid #ff8077; font-weight:800; min-width:112px; padding:9px 20px; cursor:pointer; letter-spacing:.07em; font-size:var(--text-base); line-height:1.1; margin-left:14px;
+    clip-path:polygon(14px 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px),0 14px);
+    box-shadow:0 0 0 4px rgba(248,81,73,.18), 0 0 22px rgba(248,81,73,.5); transition:transform .08s; }
+  .estop .bind { font-size:9px; font-weight:600; opacity:.85; font-family:var(--font-mono); }
+  .estop:hover { box-shadow:0 0 0 4px rgba(248,81,73,.3), 0 0 28px rgba(248,81,73,.7); }
+  .estop.fired { transform:scale(.94); background:#b71c14; }
+
+  .main { flex:1; display:grid; grid-template-columns:320px 1fr 372px; grid-template-rows:1fr auto; min-height:0; }
+  .rail { overflow-y:auto; padding:var(--space-3); }
+  .rail.left { grid-column:1; border-right:1px solid var(--color-border); }
+  .center { grid-column:2; padding:var(--space-3); min-height:0; display:flex; }
+  .rail.right { grid-column:3; border-left:1px solid var(--color-border); }
+  .drawer-wrap { grid-column:1 / -1; }
+
+  .card { background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:var(--space-3); }
+  .card + .card { margin-top:var(--space-3); }
+  .card h4 { font-size:var(--text-xs); text-transform:uppercase; letter-spacing:.06em; color:var(--color-text-muted); margin-bottom:var(--space-2); display:flex; justify-content:space-between; align-items:center; gap:8px; }
+
+  .gas-hero .val { font-size:var(--text-3xl); font-weight:700; line-height:1; } .gas-hero .unit { font-size:var(--text-base); color:var(--color-text-muted); margin-left:4px; }
+  .gas-hero.caution .val { color:var(--color-caution); } .gas-hero.hazard .val { color:var(--color-hazard); }
+  .gauge { height:8px; border-radius:var(--radius-full); margin-top:var(--space-3); position:relative;
+    background:linear-gradient(90deg,var(--color-safe) 0 55%,var(--color-caution) 55% 82%,var(--color-hazard) 82% 100%); }
+  .gauge .needle { position:absolute; top:-3px; width:3px; height:14px; background:#fff; border-radius:2px; box-shadow:0 0 4px rgba(0,0,0,.6); transition:left .4s; }
+  .src { font-size:var(--text-xs); color:var(--color-text-dim); margin-top:var(--space-2); }
+  .src.stale { color:var(--color-caution); }
+  .mini-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:var(--space-2); }
+  .mini { background:var(--color-elevated); border-radius:var(--radius-sm); padding:var(--space-2); text-align:center; }
+  .mini .m-val { font-family:var(--font-mono); font-weight:600; font-size:var(--text-base); } .mini .m-lbl { font-size:10px; color:var(--color-text-dim); text-transform:uppercase; }
+  .trend svg { width:100%; height:60px; display:block; }
+  .ledger { max-height:120px; overflow-y:auto; }
+  .stat { display:flex; justify-content:space-between; gap:8px; padding:4px 0; font-size:var(--text-xs); border-bottom:1px solid var(--color-border); }
+  .stat:last-child { border-bottom:0; } .stat .v { font-family:var(--font-mono); }
+
+  /* map */
+  .map { position:relative; flex:1; border:1px solid var(--color-border); border-radius:var(--radius-md); overflow:hidden; min-height:0; background:var(--map-bg); }
+  #mapCanvas { width:100%; height:100%; display:block; cursor:crosshair; }
+  .layerctl { position:absolute; top:10px; right:10px; background:rgba(14,17,22,.82); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:8px 10px; font-size:var(--text-xs); backdrop-filter:blur(4px); }
+  .layerctl label { display:flex; align-items:center; gap:6px; padding:2px 0; color:var(--color-text-muted); cursor:pointer; }
+  .layerctl input { accent-color:var(--color-info); }
+  .map-overlay-tl { position:absolute; top:10px; left:10px; display:flex; gap:6px; flex-wrap:wrap; max-width:60%; }
+  .scalebar { position:absolute; bottom:10px; left:12px; font-size:10px; color:var(--color-text-dim); }
+  .scalebar .bar { width:60px; height:4px; border:1px solid var(--color-text-dim); border-top:0; }
+  .map-source { position:absolute; bottom:10px; right:12px; font-size:10px; color:var(--color-text-dim); display:flex; gap:6px; align-items:center; }
+  .crosshair-tip { position:absolute; background:rgba(14,17,22,.92); border:1px solid var(--color-border); border-radius:4px; padding:4px 7px; font-size:10px; font-family:var(--font-mono); pointer-events:none; display:none; z-index:6; }
+
+  /* control rail */
+  .joystick { width:140px; height:140px; border-radius:50%; margin:8px auto; background:radial-gradient(circle,var(--color-elevated),var(--color-surface)); border:1px solid var(--color-border); position:relative; touch-action:none; }
+  .joystick .ring { position:absolute; inset:18px; border:1px dashed var(--color-border); border-radius:50%; }
+  .joystick .nub { width:48px; height:48px; border-radius:50%; background:var(--color-info); position:absolute; top:46px; left:46px; box-shadow:var(--glow-info); cursor:grab; transition:background .15s; }
+  .joystick.disabled { opacity:.4; pointer-events:none; }
+  .vw { display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:var(--text-xs); color:var(--color-text-muted); margin-top:var(--space-2); }
+  .keyleg { display:grid; grid-template-columns:repeat(3,30px); gap:4px; justify-content:center; margin-top:var(--space-3); }
+  .key { width:30px; height:28px; border:1px solid var(--color-border); border-radius:4px; display:grid; place-items:center; font-family:var(--font-mono); font-size:12px; color:var(--color-text-muted); transition:all .1s; }
+  .key.lit { background:var(--color-info-bg); color:var(--color-info); border-color:var(--color-info); }
+  .slider { width:100%; accent-color:var(--color-info); }
+  .btn { background:var(--color-elevated); color:var(--color-text); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:7px 11px; cursor:pointer; font-size:var(--text-xs); transition:all .15s; }
+  .btn:hover { border-color:var(--color-info); } .btn:disabled { opacity:.4; cursor:not-allowed; }
+  .wp-item { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--color-border); font-size:var(--text-xs); }
+  .wp-num { width:18px; height:18px; border-radius:50%; background:var(--color-elevated); display:grid; place-items:center; font-family:var(--font-mono); font-size:10px; flex-shrink:0; }
+  .wp-item .del { margin-left:auto; color:var(--color-text-dim); cursor:pointer; }
+
+  /* diagnostics drawer */
+  .drawer { background:var(--color-surface); border-top:1px solid var(--color-border); }
+  .drawer .strip { display:flex; align-items:center; gap:var(--space-3); padding:9px var(--space-4); cursor:pointer; }
+  .drawer .strip .toggle { margin-left:auto; color:var(--color-text-muted); transition:transform .2s; }
+  .drawer.open .strip .toggle { transform:rotate(180deg); }
+  .drawer .body { max-height:0; overflow:hidden; transition:max-height .25s ease; }
+  .drawer.open .body { max-height:280px; }
+  .diag-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--space-5); padding:var(--space-4); }
+  .diag-grid h4 { font-size:var(--text-xs); text-transform:uppercase; letter-spacing:.06em; color:var(--color-text-muted); margin-bottom:var(--space-2); }
+  .bar { height:5px; border-radius:var(--radius-full); background:var(--color-elevated); overflow:hidden; margin-top:3px; }
+  .bar > span { display:block; height:100%; background:var(--color-safe); transition:width .4s,background .4s; }
+  .node { display:flex; align-items:center; gap:6px; padding:3px 0; font-size:var(--text-xs); }
+  .node .d { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+  .spark { width:100%; height:30px; }
+
+  /* ════════ CRITICAL MODAL / BANNER ════════ */
+  .modal-veil { position:fixed; inset:0; z-index:120; background:rgba(7,9,12,.6); backdrop-filter:blur(2px); display:none; align-items:center; justify-content:center; animation:veil-flash 1.3s infinite; }
+  .modal-veil.show { display:flex; }
+  @keyframes veil-flash { 0%,100%{background:rgba(7,9,12,.6)} 50%{background:rgba(60,12,10,.48)} }
+  .modal { width:440px; background:var(--color-surface); border:2px solid var(--color-hazard); border-radius:var(--radius-lg); overflow:hidden; animation:modal-glow 1.3s infinite; }
+  @keyframes modal-glow { 0%,100%{box-shadow:0 0 0 6px rgba(248,81,73,.2),0 0 40px rgba(248,81,73,.45)} 50%{box-shadow:0 0 0 6px rgba(248,81,73,.06),0 0 18px rgba(248,81,73,.2)} }
+  .modal .hd { padding:16px 18px; display:flex; align-items:center; gap:12px; background:var(--color-hazard-bg); border-bottom:1px solid rgba(248,81,73,.4); }
+  .modal .hd .ico { font-size:26px; } .modal .hd .t { font-weight:800; letter-spacing:.03em; font-size:var(--text-lg); } .modal .hd .ts { margin-left:auto; font-family:var(--font-mono); font-size:var(--text-xs); color:var(--color-text-muted); }
+  .modal .bd { padding:18px; }
+  .readout { display:flex; align-items:baseline; gap:8px; margin-bottom:6px; } .readout .big { font-size:var(--text-3xl); font-weight:700; color:var(--color-hazard); line-height:1; } .readout .u { color:var(--color-text-muted); } .readout .delta { margin-left:auto; font-size:var(--text-xs); color:var(--color-hazard); }
+  .meta { font-size:var(--text-xs); color:var(--color-text-muted); margin-bottom:14px; } .meta b { color:var(--color-text); }
+  .evrow { display:flex; gap:10px; margin-bottom:14px; } .evcell { flex:1; background:var(--color-elevated); border-radius:var(--radius-md); padding:8px; text-align:center; } .evcell .mono { font-size:var(--text-xl); }
+  .actions { display:flex; flex-direction:column; gap:8px; }
+  .act { display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:var(--radius-md); border:1px solid var(--color-border); background:var(--color-elevated); color:var(--color-text); cursor:pointer; transition:all .15s; font-size:var(--text-sm); text-align:left; width:100%; }
+  .act:hover { transform:translateX(2px); border-color:var(--color-info); } .act .k { font-family:var(--font-mono); font-size:10px; color:var(--color-text-dim); margin-left:auto; border:1px solid var(--color-border); border-radius:3px; padding:1px 5px; } .act .ai { font-size:16px; width:20px; text-align:center; }
+  .act.recommend { border-color:var(--color-safe); } .act.recommend .ai { color:var(--color-safe); } .act .badge { font-size:9px; text-transform:uppercase; color:var(--color-safe); border:1px solid rgba(63,185,80,.4); border-radius:var(--radius-full); padding:1px 6px; }
+  .ackbar { margin-top:14px; padding-top:14px; border-top:1px solid var(--color-border); display:flex; align-items:center; gap:10px; }
+  .ackbtn { flex:1; background:var(--color-hazard); border:0; color:#fff; font-weight:700; padding:11px; border-radius:var(--radius-md); cursor:pointer; letter-spacing:.04em; } .ackbtn:hover { background:#ff6359; } .ackbar .hint { font-size:10px; color:var(--color-text-dim); }
+
+  .persist-banner { flex-shrink:0; display:none; align-items:center; gap:12px; padding:10px 16px; background:var(--color-hazard-bg); border-bottom:1px solid rgba(248,81,73,.5); }
+  .persist-banner.show { display:flex; } .persist-banner.cleared { background:var(--color-safe-bg); border-color:rgba(63,185,80,.5); }
+  .persist-banner .ico { font-size:18px; } .persist-banner .txt b { color:var(--color-text); } .persist-banner .sub { font-size:var(--text-xs); color:var(--color-text-muted); }
+  .pb-btn { border:1px solid var(--color-border); background:var(--color-elevated); color:var(--color-text); border-radius:var(--radius-md); padding:6px 12px; font-size:var(--text-xs); cursor:pointer; } .pb-btn:hover { border-color:var(--color-info); } .pb-btn:disabled { opacity:.45; cursor:not-allowed; border-style:dashed; } .pb-btn.reset { border-color:var(--color-safe); color:var(--color-safe); }
+
+  /* link lost */
+  .frozen-veil { position:fixed; inset:54px 0 0 0; z-index:110; display:none; align-items:center; justify-content:center; background:repeating-linear-gradient(45deg,rgba(10,13,17,.55),rgba(10,13,17,.55) 10px,rgba(10,13,17,.63) 10px,rgba(10,13,17,.63) 20px); backdrop-filter:grayscale(.7) brightness(.55); }
+  .frozen-veil.show { display:flex; }
+  .frozen-card { width:420px; background:var(--color-surface); border:1px solid var(--color-info); border-radius:var(--radius-lg); box-shadow:var(--glow-info); overflow:hidden; }
+  .frozen-card .hd { padding:14px 16px; background:var(--color-info-bg); border-bottom:1px solid rgba(88,166,255,.4); display:flex; gap:10px; align-items:center; font-weight:700; }
+  .frozen-card .bd { padding:16px; }
+  .ghost-pose { display:inline-block; width:15px; height:15px; border:2px dashed var(--color-info); border-radius:50%; vertical-align:middle; }
+  .reconnect { display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--color-elevated); border-radius:var(--radius-md); margin:12px 0; font-size:var(--text-xs); }
+  .spin { width:14px; height:14px; border:2px solid var(--color-border); border-top-color:var(--color-info); border-radius:50%; animation:spin .8s linear infinite; } @keyframes spin { to { transform:rotate(360deg); } }
+  .stale-tag { font-family:var(--font-mono); font-size:10px; color:var(--color-caution); border:1px solid rgba(210,153,34,.4); border-radius:var(--radius-full); padding:1px 6px; }
+
+  /* toast + sim panel */
+  .toast { position:fixed; bottom:64px; left:50%; transform:translateX(-50%); background:var(--color-elevated); border:1px solid var(--color-info); color:var(--color-text); padding:10px 16px; border-radius:var(--radius-md); font-size:var(--text-xs); opacity:0; pointer-events:none; transition:opacity .2s; z-index:300; }
+  .toast.show { opacity:1; }
+  #simbar { position:fixed; bottom:12px; left:12px; z-index:130; background:rgba(0,0,0,.72); border:1px solid var(--color-border); color:#fff; border-radius:8px; padding:8px 10px; font-size:11px; display:flex; gap:6px; align-items:center; opacity:.5; transition:opacity .2s; }
+  #simbar:hover { opacity:1; }
+  #simbar b { color:var(--color-caution); letter-spacing:.06em; margin-right:2px; }
+  #simbar button { background:#1c232c; color:#fff; border:1px solid #38414d; border-radius:5px; padding:4px 8px; font-size:11px; cursor:pointer; }
+  #simbar button:hover { border-color:var(--color-info); }
+</style>
+</head>
+<body>
+
+<!-- ════════════ BOOT / CONNECTION (sketch 003·C auto-reconnect) ════════════ -->
+<div id="boot">
+  <div class="boot-panel">
+    <div class="bd">
+      <div class="boot-logo">⬣</div>
+      <h2 style="margin-top:6px">SCUTTLE-03</h2>
+      <div class="uplabel" style="margin-top:4px">Base-station console · attaching over Zenoh</div>
+      <div class="progress"><span id="bootBar"></span></div>
+      <div id="bootStatus">○ starting zenoh router · locating Pi (amr@192.168.155.10)…</div>
+      <div class="topo">
+        <div class="nbox ok"><div class="ic">💻</div><div class="nm">Laptop</div><div class="dt">SLAM·frontier·GDM·web</div><span class="st"></span></div>
+        <div class="lnk"><div class="l">━ Zenoh ━</div>chrony</div>
+        <div class="nbox wait" id="bootPi"><div class="ic">🧠</div><div class="nm">Pi 5</div><div class="dt">Nav2·odom·watchdog</div><span class="st"></span></div>
+        <div class="lnk"><div class="l">━ serial ━</div>UART</div>
+        <div class="nbox wait" id="bootFeather"><div class="ic">⚙</div><div class="nm">ESP32-S3</div><div class="dt">motors·/odom</div><span class="st"></span></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn" onclick="startBoot()">Retry</button>
+        <button class="btn" style="flex:1;background:var(--color-info);border-color:var(--color-info);color:#0a0d11;font-weight:700" id="enterBtn" disabled onclick="enterCockpit()">Enter cockpit →</button>
+      </div>
+      <div class="src" style="margin-top:12px">SLAM·frontier·GDM run here on the laptop; Nav2·odom·watchdog on the Pi. Console attaches read-only and never publishes <span class="mono">/cmd_vel</span> until you enter. Gas is a <span class="mono">fake_gas_sensor</span> placeholder — real module not yet built.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ APP SHELL (sketch 001·A fixed rails) ════════════ -->
+<div id="app">
+  <div class="statusbar">
+    <span class="robot-id"><span class="live-dot"></span> SCUTTLE-03</span>
+    <span class="chip info" id="chipLink"><span class="dot"></span> LINK 18ms</span>
+    <span class="chip auto" id="chipMode"><span class="dot"></span> AUTONOMOUS · FRONTIER</span>
+    <span class="chip safe" id="chipGas"><span class="dot"></span> CH₄ nominal</span>
+    <span class="spacer"></span>
+    <div class="mode-toggle">
+      <button id="mManual" onclick="setMode('manual')">MANUAL TELEOP</button>
+      <button id="mAuto" class="on autom" onclick="setMode('auto')">AUTONOMOUS (FRONTIER)</button>
+    </div>
+    <button class="estop" onclick="fireEstop()">⬣ E-STOP<span class="bind">SPACE×2 · CTRL+.</span></button>
+  </div>
+
+  <!-- persistent (post-ACK) banner -->
+  <div class="persist-banner" id="banner">
+    <span class="ico" id="bannerIco">☣</span>
+    <div class="txt"><b id="bannerTitle">HAZARD ACTIVE</b><div class="sub" id="bannerSub"></div></div>
+    <button class="pb-btn" style="margin-left:auto" onclick="reopenModal()">Re-open actions</button>
+    <button class="pb-btn reset" id="resetBtn" disabled onclick="resetHazard()">Reset · awaiting safe levels</button>
+  </div>
+
+  <div class="main">
+    <!-- LEFT: gas / environment -->
+    <div class="rail left">
+      <div class="card gas-hero" id="gasHero">
+        <h4>Gas · CH₄ <span class="chip safe" id="gasBand"><span class="dot"></span> NOMINAL</span></h4>
+        <div><span class="val mono" id="gasVal">18</span><span class="unit">ppm</span></div>
+        <div class="gauge"><div class="needle" id="gasNeedle" style="left:12%"></div></div>
+        <div class="src" id="gasSrc">▦ fake_gas_sensor (placeholder) · /gdm/gas_1 · 0.4s ago</div>
+      </div>
+      <div class="card">
+        <h4>Gas field · GMRF (0–110) <span class="uplabel" style="color:var(--color-caution)">⚠ placeholder</span></h4>
+        <div class="mini-row">
+          <div class="mini"><div class="m-val" id="mCH4" style="color:var(--color-safe)">18</div><div class="m-lbl">raw</div></div>
+          <div class="mini"><div class="m-val" id="mCO" style="color:var(--color-text)">—</div><div class="m-lbl">GMRF μ</div></div>
+          <div class="mini"><div class="m-val" id="mO2" style="color:var(--color-text)">—</div><div class="m-lbl">GMRF peak</div></div>
+        </div>
+      </div>
+      <div class="card trend">
+        <h4>Gas trend · 60s <span class="uplabel" id="trendPeak">peak —</span></h4>
+        <svg viewBox="0 0 280 60" preserveAspectRatio="none">
+          <line x1="0" y1="11" x2="280" y2="11" stroke="#F85149" stroke-dasharray="3 3" stroke-width="1"/>
+          <line x1="0" y1="27" x2="280" y2="27" stroke="#D29922" stroke-dasharray="3 3" stroke-width="1"/>
+          <polyline id="trendLine" points="" fill="none" stroke="#3FB950" stroke-width="2"/>
+        </svg>
+        <div class="src">— — — hazard 90 · — — caution 60 (0–110 scale)</div>
+      </div>
+      <div class="card">
+        <h4>Alert ledger</h4>
+        <div class="ledger" id="ledger"><div class="stat" style="color:var(--color-text-dim)"><span>No events</span><span class="v">—</span></div></div>
+      </div>
+    </div>
+
+    <!-- CENTER: live map -->
+    <div class="center">
+      <div class="map">
+        <canvas id="mapCanvas"></canvas>
+        <div class="map-overlay-tl">
+          <span class="chip auto" id="mapSac"><span class="dot"></span> Frontier exploring</span>
+          <button class="btn" id="btnHeat" onclick="S.showHeatmap=!S.showHeatmap;this.classList.toggle('on',S.showHeatmap);if(window.toggleHeatmap)window.toggleHeatmap(S.showHeatmap);">Gas heatmap</button>
+          <span class="chip info" id="mapCov"><span class="dot"></span> 0% mapped</span>
+        </div>
+        <div class="layerctl">
+          <div class="uplabel" style="margin-bottom:4px">Layers</div>
+          <label><input type="checkbox" id="lGrid" checked> Occupancy grid</label>
+          <label><input type="checkbox" id="lHeat" checked> Gas heatmap</label>
+          <label><input type="checkbox" id="lTraj" checked> Trajectory</label>
+          <label><input type="checkbox" id="lWp" checked> Waypoints</label>
+          <label><input type="checkbox" id="lScan" checked> Lidar scan</label>
+        </div>
+        <div class="crosshair-tip" id="xtip"></div>
+        <div class="scalebar">1 m<div class="bar"></div></div>
+        <div class="map-source"><span class="chip safe" style="padding:2px 7px"><span class="dot"></span> SLAM</span> encoder /odom OK</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: control / autonomy -->
+    <div class="rail right">
+      <div class="card">
+        <h4>Autonomy · Frontier <span class="chip auto" id="sacState"><span class="dot"></span> EXPLORING</span></h4>
+        <div class="stat"><span>Node</span><span class="v">explore_node (explore_lite)</span></div>
+        <div class="stat"><span>Active goal</span><span class="v" id="sacStep">frontier → 8.4, 1.3 m</span></div>
+        <div class="stat"><span>Save maps</span>
+          <span class="v">
+            <input id="savePath" type="text" placeholder="~/scuttle_maps" style="width:120px">
+            <button class="btn" onclick="(window.saveMaps||function(){})(document.getElementById('savePath').value)">Save</button>
+          </span>
+        </div>
+        <div class="stat"><span>Cmd v / ω</span><span class="v" id="sacAct">0.30 / 0.4</span></div>
+        <div class="stat"><span>Coverage (/map)</span><span class="v" id="sacCov">0%</span></div>
+      </div>
+      <div class="card">
+        <h4>Teleop <span class="uplabel" id="teleHint">disabled in autonomous</span></h4>
+        <div class="joystick disabled" id="joy"><div class="ring"></div><div class="nub" id="nub"></div></div>
+        <div class="vw"><span id="vwV">v 0.00 m/s</span><span id="vwW">ω 0.00 rad/s</span></div>
+        <div class="keyleg">
+          <div></div><div class="key" id="kW">W</div><div></div>
+          <div class="key" id="kA">A</div><div class="key" id="kS">S</div><div class="key" id="kD">D</div>
+        </div>
+        <div style="margin-top:12px"><div class="uplabel">Max speed governor · <span id="govVal">0.50</span> m/s (LIN_MAX)</div><input class="slider" type="range" min="5" max="50" value="50" id="gov"></div>
+      </div>
+      <div class="card">
+        <h4>Waypoints <button class="btn" style="padding:3px 9px" onclick="clearWaypoints()">Clear</button></h4>
+        <div class="src" style="margin-top:0">Click the map to queue a Nav2 goal (navigate_to_pose).</div>
+        <div id="wpList"><div class="wp-item" style="color:var(--color-text-dim)"><span class="wp-num">–</span> No goals queued</div></div>
+      </div>
+    </div>
+
+    <!-- DIAGNOSTICS DRAWER -->
+    <div class="drawer-wrap">
+      <div class="drawer" id="drawer">
+        <div class="strip" onclick="document.getElementById('drawer').classList.toggle('open')">
+          <span class="uplabel">Diagnostics</span>
+          <span class="chip safe" id="dSys"><span class="dot"></span> System</span>
+          <span class="chip safe" id="dNet"><span class="dot"></span> Network</span>
+          <span class="chip safe" id="dNodes"><span class="dot"></span> Nodes 8/8</span>
+          <span class="chip auto" id="dDrl"><span class="dot"></span> Frontier</span>
+          <span class="toggle">▲</span>
+        </div>
+        <div class="body">
+          <div class="diag-grid">
+            <div>
+              <h4>System · RPi 5</h4>
+              <div class="stat"><span>CPU</span><span class="v" id="sCpu">38%</span></div><div class="bar"><span id="sCpuBar" style="width:38%"></span></div>
+              <div class="stat"><span>Temp (throttle 82°C)</span><span class="v" id="sTemp">61°C</span></div><div class="bar"><span id="sTempBar" style="width:61%;background:var(--color-caution)"></span></div>
+              <div class="stat"><span>Battery</span><span class="v" id="sBatt">11.8 V · 72%</span></div>
+              <div class="stat"><span>Motor I (L/R)</span><span class="v" id="sMotor">0.9 / 1.1 A</span></div>
+            </div>
+            <div>
+              <h4>Network · Zenoh</h4>
+              <div class="stat"><span>Bridge</span><span class="v" id="nBridge" style="color:var(--color-safe)">CONNECTED</span></div>
+              <div class="stat"><span>Wi-Fi RSSI</span><span class="v" id="nRssi">−54 dBm</span></div>
+              <div class="stat"><span>Latency (RTT)</span><span class="v" id="nLat">18 ms</span></div>
+              <svg class="spark" viewBox="0 0 200 30" preserveAspectRatio="none"><polyline id="latSpark" points="" fill="none" stroke="#58A6FF" stroke-width="1.5"/></svg>
+              <div class="stat"><span>map→odom age</span><span class="v" id="nTfAge" style="color:var(--color-safe)">0.05 s</span></div>
+              <div class="stat"><span>chrony offset</span><span class="v">13 ns</span></div>
+            </div>
+            <div>
+              <h4>ROS 2 Nodes</h4>
+              <div id="nodeList"></div>
+            </div>
+            <div>
+              <h4>Frontier · explore_lite</h4>
+              <div class="stat"><span>Node</span><span class="v">explore_node</span></div>
+              <div class="stat"><span>Active goal</span><span class="v" id="dStep">8.4, 1.3 m</span></div>
+              <div class="stat"><span>Frontiers</span><span class="v">3 candidates</span></div>
+              <div class="stat"><span>Status</span><span class="v" id="dStatus" style="color:var(--color-auto)">exploring</span></div>
+              <div class="stat"><span>Coverage</span><span class="v" id="dCov">0%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ CRITICAL MODAL (sketch 002) ════════════ -->
+<div class="modal-veil" id="modalVeil">
+  <div class="modal">
+    <div class="hd"><span class="ico" id="modalIco">☣</span><span class="t" id="modalTitle">HAZARDOUS GAS</span><span class="ts" id="modalTs">14:22:41</span></div>
+    <div class="bd" id="modalBody"><!-- filled per event --></div>
+  </div>
+</div>
+
+<!-- ════════════ LINK LOST (sketch 002·C) ════════════ -->
+<div class="frozen-veil" id="frozenVeil">
+  <div class="frozen-card">
+    <div class="hd"><span>⚠</span> LINK LOST — DATA FROZEN</div>
+    <div class="bd">
+      <div class="meta" style="color:var(--color-text)">Zenoh bridge heartbeat missed beyond timeout. Telemetry below is <b>last-known</b>, not live. Robot pose shown as <span class="ghost-pose"></span> ghost.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+        <div><div class="uplabel">CH₄ <span class="stale-tag">stale</span></div><div class="mono" id="frozenGas">—</div></div>
+        <div><div class="uplabel">Pose <span class="stale-tag">stale</span></div><div class="mono" id="frozenPose">—</div></div>
+      </div>
+      <div class="reconnect"><span class="spin"></span> <span id="reconnectMsg">Reconnecting… attempt 1 · Zenoh session OPENING</span></div>
+      <div style="background:var(--color-auto-bg);border:1px solid rgba(163,113,247,.4);border-radius:var(--radius-md);padding:10px;font-size:var(--text-xs);color:var(--color-text)">
+        <span class="uplabel" style="color:var(--color-auto)">Robot failsafe</span><br>
+        The Pi <b>link_watchdog</b> sees <b>map→odom</b> go stale → asserts <b>/estop</b> (twist_mux lock pri 255). Robot stops in ~1.5 s — <b>not</b> moving blind.
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="act" style="background:var(--color-info);border-color:var(--color-info);color:#fff" onclick="forceReconnect()"><span class="ai">⟳</span> Force reconnect now</button>
+        <button class="act" onclick="toast('Opening connection settings…')"><span class="ai">⚙</span> Reconfigure</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- simulation control (mock data — real app receives live ROS 2 over Zenoh) -->
+<div id="simbar">
+  <b>SIM</b>
+  <button onclick="togglePause()" id="pauseBtn">⏸ Pause</button>
+  <button onclick="injectCollision()">Collision</button>
+  <button onclick="injectLinkLoss()">Link drop</button>
+  <button onclick="injectGas()">Force gas spike</button>
+  <button onclick="location.reload()">Restart</button>
+</div>
+
+<script>
+/* ============================================================================
+   SCUTTLE-03 Operator Console — integrated prototype with simulation engine.
+   Data is MOCK. In the real deployment each panel binds to a ROS 2 topic/service
+   (see DATA-CONTRACT.md). Field names & limits mirror the real distributed stack:
+   laptop runs SLAM + frontier(explore_lite) + GDM(gmrf) + webserver; Pi runs Nav2 +
+   scuttle_base→ESP32-S3 (/odom) + twist_mux + link_watchdog; gas is a fake_gas_sensor
+   placeholder → /gdm/gas_1 (olfaction_msgs/GasSensor, 0–110). Topics: /map, /odom,
+   /scan, /cmd_vel_teleop, /estop(std_msgs/Bool), /diagnostics, navigate_to_pose.
+   SCUTTLE limits: LIN_MAX 0.5 m/s, ANG_MAX 1.0 rad/s.
+   ========================================================================== */
+const $ = id => document.getElementById(id);
+let toastT;
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2400); }
+function now(){ const d=new Date(); return d.toTimeString().slice(0,8); }
+
+/* ---------- World model ---------- */
+const W = 960, H = 600;                       // canvas logical size
+const WALLS = [                                // ground-truth occupancy (revealed via SLAM fog)
+  [60,60,900,60],[900,60,900,540],[900,540,470,540],[470,540,470,320],[470,320,60,320],[60,320,60,60],
+  [300,60,300,210],[620,300,620,540],[470,180,690,180]
+];
+const GAS_SOURCE = {x:780, y:150};            // hidden leak; CH4 rises as robot nears
+// exploration tour (explore_lite frontier targets), snakes through the room past the source
+const TOUR = [
+  {x:120,y:250},{x:230,y:160},{x:230,y:250},{x:400,y:250},{x:400,y:120},{x:540,y:120},
+  {x:560,y:240},{x:720,y:240},{x:780,y:150},{x:850,y:130},{x:850,y:420},{x:700,y:470},{x:540,y:470}
+];
+
+/* ---------- State ---------- */
+const S = {
+  mode:'auto', showHeatmap:true, paused:false, connected:true, estop:false, live:false,
+  scan:null, gasGrid:null,                    // live: LaserScan + GMRF grid (set by ros-bindings.js)
+  pose:{x:120,y:250,th:0}, tourIdx:0, dir:1, frozen:false,
+  vel:{v:0,w:0}, manual:{v:0,w:0},
+  traj:[], explored:[],                       // explored = revealed reveal-circles (persistent on fog canvas)
+  ch4:120, co:12, o2:20.9, ch4Hist:[],
+  coverage:0, battery:0.72, volt:11.8, cpu:38, temp:61, motorL:0.9, motorR:1.1,
+  latency:18, rssi:-54, latHist:[],
+  gov:0.5,
+  waypoints:[], keys:{}, alarm:null,          // alarm: {type, acked, safe}
+};
+const NODES = [   // grouped by machine — matches ros2_ws/deploy split
+  {n:'zenoh_router', m:'laptop'}, {n:'slam_toolbox', m:'laptop'}, {n:'explore_node', m:'laptop'},
+  {n:'map_throttle', m:'laptop'}, {n:'gmrf_node', m:'laptop'},
+  {n:'scuttle_base', m:'pi'}, {n:'nav2 (9 lifecycle)', m:'pi'}, {n:'twist_mux', m:'pi'},
+  {n:'link_watchdog', m:'pi'}, {n:'ydlidar', m:'pi'}, {n:'fake_gas_sensor', m:'pi'},
+];
+
+/* ---------- Canvas / fog setup ---------- */
+const cv = $('mapCanvas'); cv.width = W; cv.height = H;
+const ctx = cv.getContext('2d');
+const base = document.createElement('canvas'); base.width=W; base.height=H; const bctx = base.getContext('2d');
+const fog = document.createElement('canvas'); fog.width=W; fog.height=H; const fctx = fog.getContext('2d');
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+function paintBase(){
+  bctx.clearRect(0,0,W,H);
+  bctx.fillStyle = css('--map-free'); bctx.fillRect(40,40,920,520);   // free interior
+  bctx.strokeStyle = css('--map-occupied'); bctx.lineWidth=4; bctx.lineCap='round';
+  WALLS.forEach(([x1,y1,x2,y2])=>{ bctx.beginPath(); bctx.moveTo(x1,y1); bctx.lineTo(x2,y2); bctx.stroke(); });
+}
+function resetFog(){ fctx.clearRect(0,0,W,H); fctx.fillStyle = css('--map-unknown'); fctx.fillRect(0,0,W,H); }
+function reveal(x,y,r){ fctx.save(); fctx.globalCompositeOperation='destination-out';
+  const g=fctx.createRadialGradient(x,y,r*0.3,x,y,r); g.addColorStop(0,'rgba(0,0,0,1)'); g.addColorStop(1,'rgba(0,0,0,0)');
+  fctx.fillStyle=g; fctx.beginPath(); fctx.arc(x,y,r,0,7); fctx.fill(); fctx.restore();
+  S.coverage = Math.min(1, S.coverage + 0.0009);
+}
+paintBase(); resetFog();
+
+/* ---------- Gas field ---------- */
+function gasAt(x,y){   // GMRF gas field, 0–110 scale (fake_gas_sensor placeholder)
+  const d = Math.hypot(x-GAS_SOURCE.x, y-GAS_SOURCE.y);
+  const peak = S._spike ? 130 : 100;
+  return Math.min(140, 6 + peak * Math.exp(-(d*d)/(2*120*120)));
+}
+
+/* ---------- Render loop ---------- */
+let last = performance.now();
+function frame(t){
+  const dt = Math.min(0.05,(t-last)/1000); last=t;
+  if(!S.paused && !S.frozen && !S.estop) step(dt);
+  draw();
+  requestAnimationFrame(frame);
+}
+function step(dt){
+  // motion
+  if(S.mode==='manual'){
+    S.vel.v = S.manual.v; S.vel.w = S.manual.w;
+    S.pose.th += S.vel.w*dt;
+    S.pose.x += Math.cos(S.pose.th)*S.vel.v*140*dt;
+    S.pose.y += Math.sin(S.pose.th)*S.vel.v*140*dt;
+  } else if(S.mode==='auto' || S.mode==='retreat'){
+    const tgt = S.mode==='retreat' ? TOUR[Math.max(0,S.tourIdx-1)] : (S.waypoints[0] || TOUR[S.tourIdx]);
+    if(tgt){
+      const dx=tgt.x-S.pose.x, dy=tgt.y-S.pose.y, d=Math.hypot(dx,dy);
+      const want=Math.atan2(dy,dx); let da=want-S.pose.th; while(da>Math.PI)da-=2*Math.PI; while(da<-Math.PI)da+=2*Math.PI;
+      S.pose.th += Math.max(-1.0,Math.min(1.0,da*3))*dt;     // ANG_MAX 1.0 rad/s
+      const spd = Math.min(S.gov, d/60);
+      S.vel.v=spd; S.vel.w=da*3;
+      S.pose.x += Math.cos(S.pose.th)*spd*140*dt; S.pose.y += Math.sin(S.pose.th)*spd*140*dt;
+      if(d<14){
+        if(S.waypoints.length && S.mode==='auto'){ S.waypoints.shift(); renderWaypoints(); }
+        else if(S.mode==='retreat'){ S.tourIdx=Math.max(0,S.tourIdx-1); }
+        else { S.tourIdx=(S.tourIdx+1)%TOUR.length; }
+      }
+    }
+  }
+  // clamp inside room
+  S.pose.x=Math.max(55,Math.min(905,S.pose.x)); S.pose.y=Math.max(55,Math.min(535,S.pose.y));
+  // explored + trajectory
+  reveal(S.pose.x,S.pose.y,72);
+  if(!S.traj.length || Math.hypot(S.pose.x-S.traj[S.traj.length-1].x,S.pose.y-S.traj[S.traj.length-1].y)>6){
+    S.traj.push({x:S.pose.x,y:S.pose.y}); if(S.traj.length>600)S.traj.shift();
+  }
+  // gas reading from field
+  const target = gasAt(S.pose.x,S.pose.y);
+  S.ch4 += (target - S.ch4)*Math.min(1,dt*1.5) + (Math.random()-0.5)*8;
+  S.ch4 = Math.max(60,S.ch4);
+  S.co = 10 + Math.max(0,(S.ch4-300))*0.01 + (Math.random()-0.5)*2;
+  S.o2 = 20.9 - Math.max(0,(S.ch4-800))*0.0008;
+  // hazard trigger (0–110 GMRF scale: caution 60, hazard 90)
+  if(S.ch4>90 && !S.alarm){ fireHazard(); }
+  if(S.alarm && S.alarm.type==='gas' && S.alarm.acked){
+    if(S.ch4<60 && !S.alarm.safe) markSafe();
+    if(S.ch4>=60 && S.alarm.safe) markUnsafe();
+  }
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  ctx.drawImage(base,0,0);
+  // heatmap
+  if($('lHeat').checked){
+    if(S.live){
+      // real heatmap = GMRF gas-distribution grid (gmrf_node) rendered cell-by-cell over /map.
+      if(S.gasGrid && typeof paintGasGrid==='function') paintGasGrid(ctx, S.gasGrid);
+    } else {
+      const inten = Math.min(1,(S.ch4)/110);
+      const r = 150 + inten*60;
+      const g = ctx.createRadialGradient(GAS_SOURCE.x,GAS_SOURCE.y,8,GAS_SOURCE.x,GAS_SOURCE.y,r);
+      g.addColorStop(0,`rgba(244,208,63,${0.25+inten*0.4})`);
+      g.addColorStop(0.45,`rgba(230,126,34,${0.18+inten*0.25})`);
+      g.addColorStop(1,'rgba(108,42,106,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(GAS_SOURCE.x,GAS_SOURCE.y,r,0,7); ctx.fill();
+    }
+  }
+  // fog (unexplored) over everything below robot
+  if($('lGrid').checked) ctx.drawImage(fog,0,0);
+  // trajectory
+  if($('lTraj').checked && S.traj.length>1){
+    ctx.lineWidth=2; ctx.strokeStyle='rgba(88,166,255,.75)'; ctx.beginPath();
+    S.traj.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.stroke();
+  }
+  // planned path to first waypoint
+  if($('lWp').checked && S.waypoints[0]){
+    ctx.setLineDash([6,5]); ctx.strokeStyle='rgba(163,113,247,.9)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(S.pose.x,S.pose.y); ctx.lineTo(S.waypoints[0].x,S.waypoints[0].y); ctx.stroke(); ctx.setLineDash([]);
+    S.waypoints.forEach((w,i)=>{ ctx.fillStyle=css('--color-auto'); ctx.beginPath(); ctx.arc(w.x,w.y,7,0,7); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.font='9px monospace'; ctx.textAlign='center'; ctx.fillText(i+1,w.x,w.y+3); });
+  }
+  // lidar scan
+  if($('lScan').checked){
+    if(S.live){
+      // real /scan: hit points transformed map→canvas by ros-bindings.js
+      if(S.scan && typeof paintScan==='function') paintScan(ctx, S.scan);
+    } else {
+      ctx.fillStyle='rgba(88,166,255,.10)'; ctx.beginPath(); ctx.moveTo(S.pose.x,S.pose.y);
+      for(let a=-1;a<=1;a+=0.1){ const ang=S.pose.th+a; ctx.lineTo(S.pose.x+Math.cos(ang)*90,S.pose.y+Math.sin(ang)*90); }
+      ctx.closePath(); ctx.fill();
+    }
+  }
+  // source marker when hazardous
+  if(S.ch4>90){ ctx.fillStyle=css('--color-hazard'); ctx.beginPath(); ctx.arc(GAS_SOURCE.x,GAS_SOURCE.y,4,0,7); ctx.fill(); }
+  // robot
+  ctx.save(); ctx.translate(S.pose.x,S.pose.y);
+  const ghost = S.frozen;
+  ctx.fillStyle=css('--color-surface'); ctx.strokeStyle = ghost?css('--color-info'):(S.estop?css('--color-hazard'):css('--color-info'));
+  ctx.lineWidth=2; if(ghost) ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.arc(0,0,9,0,7); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle=ghost?css('--color-info'):css('--color-info'); ctx.beginPath(); ctx.moveTo(0,0);
+  ctx.lineTo(Math.cos(S.pose.th)*16,Math.sin(S.pose.th)*16); ctx.stroke();
+  ctx.restore();
+}
+requestAnimationFrame(frame);
+
+/* ---------- 1 Hz telemetry tick ---------- */
+setInterval(()=>{
+  if(S.paused || S.frozen) return;
+  // health drift
+  S.cpu = 34 + Math.random()*14 + (S.mode==='auto'?6:0);
+  S.temp = 58 + Math.random()*8 + (S.cpu>45?4:0);
+  S.battery = Math.max(0.05, S.battery - 0.0006);
+  S.volt = 10.6 + S.battery*2.2;
+  S.motorL = S.alarm&&S.alarm.type==='collision'&&!S.alarm.safe ? 3.8 : 0.7+Math.abs(S.vel.v)*2+Math.random()*0.3;
+  S.motorR = 0.7+Math.abs(S.vel.v)*2+Math.random()*0.3;
+  S.latency = Math.round(14 + Math.random()*14 + (S.rssi<-70?40:0));
+  S.rssi = Math.round(-50 - Math.random()*14 - (1-S.coverage)*8);
+  S.latHist.push(S.latency); if(S.latHist.length>40)S.latHist.shift();
+  // ch4 history
+  S.ch4Hist.push(S.ch4); if(S.ch4Hist.length>60)S.ch4Hist.shift();
+  updateHUD();
+}, 1000);
+
+/* ---------- HUD update ---------- */
+function band(v){ return v>90?'hazard':v>60?'caution':'safe'; }
+function updateHUD(){
+  const b=band(S.ch4);
+  $('gasVal').textContent = Math.round(S.ch4).toLocaleString();
+  $('mCH4').textContent = Math.round(S.ch4);
+  { const h=S.ch4Hist.length?S.ch4Hist:[S.ch4]; $('mCO').textContent=Math.round(h.reduce((a,b)=>a+b,0)/h.length); $('mO2').textContent=Math.round(Math.max(...h)); }
+  $('gasNeedle').style.left = Math.min(98, S.ch4/110*100)+'%';
+  const hero=$('gasHero'); hero.classList.remove('caution','hazard'); if(b!=='safe')hero.classList.add(b);
+  const gb=$('gasBand'); gb.className='chip '+b; gb.innerHTML='<span class="dot"></span> '+b.toUpperCase();
+  const cg=$('chipGas'); cg.className='chip '+b; cg.innerHTML='<span class="dot"></span> CH₄ '+(b==='safe'?'nominal':b);
+  $('mCH4').style.color = `var(--color-${b})`;
+  $('gasSrc').textContent='▦ fake_gas_sensor (placeholder) · /gdm/gas_1 · '+(0.2+Math.random()*0.4).toFixed(1)+'s ago';
+  // trend
+  if(S.ch4Hist.length>1){
+    const max=Math.max(110,...S.ch4Hist);
+    const pts=S.ch4Hist.map((v,i)=>`${i/59*280},${60-v/max*60}`).join(' ');
+    const tl=$('trendLine'); tl.setAttribute('points',pts);
+    tl.setAttribute('stroke',`var(--color-${band(Math.max(...S.ch4Hist))})`);
+    $('trendPeak').textContent='peak '+Math.round(Math.max(...S.ch4Hist))+' ppm';
+  }
+  // autonomy
+  const st=$('sacState'); const sl = S.mode==='manual'?'PAUSED':S.mode==='retreat'?'RETREATING':S.estop?'HALTED':'EXPLORING';
+  st.className = 'chip '+(S.mode==='manual'?'info':S.estop?'hazard':'auto'); st.innerHTML='<span class="dot"></span> '+sl;
+  const goal = (S.pose.x/100+0.6).toFixed(1)+', '+(S.pose.y/100).toFixed(1)+' m';
+  $('sacStep').textContent='frontier → '+goal;
+  $('sacAct').textContent=S.vel.v.toFixed(2)+' / '+S.vel.w.toFixed(1);
+  $('sacCov').textContent=Math.round(S.coverage*100)+'%'; $('dCov').textContent=Math.round(S.coverage*100)+'%';
+  $('mapCov').innerHTML='<span class="dot"></span> '+Math.round(S.coverage*100)+'% mapped';
+  $('mapSac').innerHTML='<span class="dot"></span> Frontier '+sl.toLowerCase();
+  $('dStep').textContent=goal; $('dStatus').textContent=sl.toLowerCase();
+  // system
+  $('sCpu').textContent=Math.round(S.cpu)+'%'; $('sCpuBar').style.width=S.cpu+'%';
+  $('sCpuBar').style.background = S.cpu>80?'var(--color-hazard)':S.cpu>60?'var(--color-caution)':'var(--color-safe)';
+  $('sTemp').textContent=Math.round(S.temp)+'°C'; $('sTempBar').style.width=(S.temp/82*100)+'%';
+  $('sTempBar').style.background = S.temp>78?'var(--color-hazard)':S.temp>68?'var(--color-caution)':'var(--color-safe)';
+  $('sBatt').textContent=S.volt.toFixed(1)+' V · '+Math.round(S.battery*100)+'%';
+  $('sMotor').textContent=S.motorL.toFixed(1)+' / '+S.motorR.toFixed(1)+' A';
+  $('sMotor').style.color = S.motorL>3?'var(--color-hazard)':'var(--color-text)';
+  // network
+  $('nRssi').textContent=S.rssi+' dBm'; $('nLat').textContent=S.latency+' ms';
+  $('chipLink').innerHTML='<span class="dot"></span> LINK '+S.latency+'ms';
+  $('chipLink').className='chip '+(S.latency>50?'caution':'info');
+  if(S.latHist.length>1){ const mx=Math.max(60,...S.latHist); $('latSpark').setAttribute('points',S.latHist.map((v,i)=>`${i/39*200},${30-v/mx*28}`).join(' ')); }
+  // diag chips
+  $('dSys').className='chip '+(S.temp>78||S.cpu>80?'caution':'safe');
+  $('dNet').className='chip '+(S.latency>50?'caution':'safe'); $('dNet').innerHTML='<span class="dot"></span> Network';
+  if(S.battery<0.15){ $('dSys').className='chip hazard'; }
+}
+
+/* nodes list */
+function renderNodes(){
+  $('nodeList').innerHTML = NODES.map(o=>{
+    const stale = (S.frozen && o.m==='pi');   // link loss → Pi-side nodes go stale on the laptop
+    const c = stale?'caution':'safe';
+    return `<div class="node"><span class="d" style="background:var(--color-${c})"></span> ${o.n}<span style="color:var(--color-text-dim);font-size:10px;margin-left:auto">${o.m}${stale?' ·stale':''}</span></div>`;
+  }).join('');
+  const staleN = NODES.filter(o=>S.frozen&&o.m==='pi').length;
+  $('dNodes').innerHTML='<span class="dot"></span> Nodes '+(NODES.length-staleN)+'/'+NODES.length;
+  $('dNodes').className='chip '+(staleN?'caution':'safe');
+}
+renderNodes();
+
+/* ---------- Boot sequence ---------- */
+let bootT=[];
+function startBoot(){
+  bootT.forEach(clearTimeout); bootT=[];
+  const bar=$('bootBar'), st=$('bootStatus'); bar.style.width='0'; $('enterBtn').disabled=true;
+  $('bootPi').className='nbox wait'; $('bootFeather').className='nbox wait';
+  const seq=[
+    [400,'15%','○ zenoh router up · chrony locking Pi clock…'],
+    [1100,'42%','● Pi reached · discovering ROS 2 graph over the link…',()=>$('bootPi').className='nbox ok'],
+    [1900,'68%','● Nav2 active · slam_toolbox + explore_node up · map→odom TF resolving…'],
+    [2700,'88%','● fake_gas_sensor → /gdm/gas_1 · /scan 10 Hz · /odom OK…'],
+    [3300,'100%','✓ bring-up complete — cockpit unlocked',()=>{$('bootFeather').className='nbox ok'; $('enterBtn').disabled=false; $('bootStatus').style.color='var(--color-safe)';}],
+  ];
+  seq.forEach(([t,w,m,fn])=>bootT.push(setTimeout(()=>{bar.style.width=w; st.textContent=m; if(fn)fn();},t)));
+}
+function enterCockpit(){ $('boot').style.display='none'; $('app').classList.add('live'); updateHUD(); toast('Attached to SCUTTLE-03 · autonomous frontier exploration active'); }
+startBoot();
+
+/* ---------- Mode ---------- */
+function setMode(m){
+  if(S.estop){ toast('Release E-STOP before changing mode'); }
+  S.mode=m;
+  $('mManual').className = m==='manual'?'on':''; $('mAuto').className = m==='auto'?'on autom':'';
+  $('chipMode').className='chip '+(m==='manual'?'info':'auto');
+  $('chipMode').innerHTML='<span class="dot"></span> '+(m==='manual'?'MANUAL TELEOP':'AUTONOMOUS · FRONTIER');
+  $('joy').classList.toggle('disabled', m!=='manual');
+  $('teleHint').textContent = m==='manual'?'live':'disabled in autonomous';
+  toast(m==='manual'?'Manual teleop engaged — frontier paused':'Autonomous frontier exploration engaged');
+}
+
+/* ---------- E-STOP ---------- */
+function fireEstop(){
+  S.estop=!S.estop;
+  document.querySelectorAll('.estop').forEach(b=>{ b.classList.add('fired'); setTimeout(()=>b.classList.remove('fired'),180); });
+  if(S.estop){ S.vel={v:0,w:0}; S.manual={v:0,w:0}; toast('⬣ E-STOP LATCHED — /estop lock asserted (twist_mux pri 255)'); }
+  else toast('E-STOP released — resume control to continue');
+}
+let lastSpace=0;
+window.addEventListener('keydown',e=>{
+  const typing=/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+  if(e.code==='Space'&&!typing){ const t=Date.now(); if(t-lastSpace<350){e.preventDefault();fireEstop();lastSpace=0;}else lastSpace=t; }
+  if(e.ctrlKey&&e.key==='.'){ e.preventDefault(); fireEstop(); }
+  // teleop keys
+  if(S.mode==='manual'&&!typing){ const k=e.key.toLowerCase(); if('wasd'.includes(k)){ S.keys[k]=true; lightKeys(); applyKeys(); } }
+});
+window.addEventListener('keyup',e=>{ const k=e.key.toLowerCase(); if('wasd'.includes(k)){ S.keys[k]=false; lightKeys(); applyKeys(); } });
+function lightKeys(){ ['w','a','s','d'].forEach(k=>$('k'+k.toUpperCase()).classList.toggle('lit',!!S.keys[k])); }
+function applyKeys(){
+  let v=0,w=0; if(S.keys.w)v+=S.gov; if(S.keys.s)v-=S.gov; if(S.keys.a)w-=1.0; if(S.keys.d)w+=1.0;
+  S.manual={v,w}; $('vwV').textContent='v '+v.toFixed(2)+' m/s'; $('vwW').textContent='ω '+w.toFixed(1)+' rad/s';
+}
+
+/* ---------- Joystick ---------- */
+(function(){
+  const joy=$('joy'), nub=$('nub'); let drag=false;
+  function set(dx,dy){ const max=46,d=Math.hypot(dx,dy); if(d>max){dx*=max/d;dy*=max/d;} nub.style.left=(46+dx)+'px'; nub.style.top=(46+dy)+'px';
+    const v=-dy/max*S.gov, w=dx/max*1.0; S.manual={v,w}; $('vwV').textContent='v '+v.toFixed(2)+' m/s'; $('vwW').textContent='ω '+w.toFixed(1)+' rad/s'; }
+  nub.addEventListener('mousedown',e=>{ if(S.mode==='manual'){drag=true; e.preventDefault();} });
+  window.addEventListener('mousemove',e=>{ if(!drag)return; const r=joy.getBoundingClientRect(); set(e.clientX-r.left-70,e.clientY-r.top-70); });
+  window.addEventListener('mouseup',()=>{ if(!drag)return; drag=false; nub.style.left='46px'; nub.style.top='46px'; S.manual={v:0,w:0}; $('vwV').textContent='v 0.00 m/s'; $('vwW').textContent='ω 0.00 rad/s'; });
+})();
+$('gov').addEventListener('input',e=>{ S.gov=e.target.value/100; $('govVal').textContent=S.gov.toFixed(2); });
+
+/* ---------- Waypoints ---------- */
+cv.addEventListener('click',e=>{
+  if(S.mode==='manual'){ toast('Switch to autonomous to set Nav2 goals'); return; }
+  const r=cv.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width*W, y=(e.clientY-r.top)/r.height*H;
+  S.waypoints.push({x,y}); renderWaypoints(); toast('Nav2 goal queued (navigate_to_pose)');
+});
+cv.addEventListener('mousemove',e=>{
+  const r=cv.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width*W, y=(e.clientY-r.top)/r.height*H;
+  const tip=$('xtip'); tip.style.display='block'; tip.style.left=(e.clientX-r.left+12)+'px'; tip.style.top=(e.clientY-r.top+12)+'px';
+  tip.textContent = Math.round(gasAt(x,y))+' ppm  ·  '+(x/100).toFixed(1)+', '+(y/100).toFixed(1)+' m';
+});
+cv.addEventListener('mouseleave',()=>$('xtip').style.display='none');
+function renderWaypoints(){
+  const el=$('wpList');
+  if(!S.waypoints.length){ el.innerHTML='<div class="wp-item" style="color:var(--color-text-dim)"><span class="wp-num">–</span> No goals queued</div>'; return; }
+  el.innerHTML=S.waypoints.map((w,i)=>`<div class="wp-item"><span class="wp-num">${i+1}</span> ${i===0?'Navigating…':'Queued'} <span style="color:${i===0?'var(--color-info)':'var(--color-text-dim)'}">${i===0?'●':'○'}</span><span class="del" onclick="delWp(${i})">✕</span></div>`).join('');
+}
+function delWp(i){ S.waypoints.splice(i,1); renderWaypoints(); }
+function clearWaypoints(){ S.waypoints=[]; renderWaypoints(); toast('Goal queue cleared'); }
+
+/* ---------- Critical events ---------- */
+function logLedger(msg){
+  const el=$('ledger'); if(el.firstChild&&el.firstChild.textContent.includes('No events'))el.innerHTML='';
+  const d=document.createElement('div'); d.className='stat'; d.innerHTML=`<span>${msg}</span><span class="v">${now()}</span>`; el.prepend(d);
+}
+function fireHazard(){
+  S.alarm={type:'gas',acked:false,safe:false};
+  $('modalIco').textContent='☣'; $('modalTitle').textContent='HAZARDOUS GAS'; $('modalTs').textContent=now();
+  $('modalBody').innerHTML=`
+    <div class="readout"><span class="big mono">${Math.round(S.ch4)}</span><span class="u">ppm (0–110)</span><span class="delta">▲ rising · approaching LEL</span></div>
+    <div class="meta">Threshold <b>90</b> exceeded · debounced over 5 samples · peak at <b>robot location</b> · source marker dropped on map · <b>fake_gas_sensor (placeholder) · /gdm/gas_1</b></div>
+    <div class="actions">
+      <button class="act recommend" onclick="actRetreat()"><span class="ai">↩</span> Retreat along safe path <span class="badge">recommended</span><span class="k">R</span></button>
+      <button class="act" onclick="actHold()"><span class="ai">⏸</span> Hold position &amp; sample <span class="k">H</span></button>
+      <button class="act" onclick="actManual()"><span class="ai">🕹</span> Take manual control <span class="k">M</span></button>
+    </div>
+    <div class="ackbar"><button class="ackbtn" onclick="acknowledge()">ACKNOWLEDGE</button><span class="hint">Stops the flashing alarm. Hazard stays as a banner until gas &lt; 60 and you reset.</span></div>`;
+  $('modalVeil').classList.add('show'); logLedger('CH₄ HAZARD onset ('+Math.round(S.ch4)+' ppm)');
+}
+function injectCollision(){
+  if($('app').classList.contains('live')===false) return;
+  S.alarm={type:'collision',acked:false,safe:false}; S.mode='auto'; S.estop=false; S.paused=false; S.motorL=3.8;
+  $('modalIco').textContent='⊘'; $('modalTitle').textContent='COLLISION — HALTED'; $('modalTs').textContent=now();
+  $('modalBody').innerHTML=`
+    <div class="meta">Auto-stop fired <b>before operator input</b> on motor-current spike + encoder stall (front-left contact estimated). Verify the obstruction cleared (current → baseline) before resuming.</div>
+    <div class="evrow"><div class="evcell"><div class="mono" style="color:var(--color-hazard)">3.8A</div><div class="uplabel">Motor L</div></div><div class="evcell"><div class="mono" style="color:var(--color-safe)">1.1A</div><div class="uplabel">Motor R</div></div></div>
+    <div class="actions">
+      <button class="act recommend" onclick="toast('Inspect mode — free-look map &amp; sensors')"><span class="ai">🔍</span> Inspect surroundings <span class="badge">recommended</span><span class="k">I</span></button>
+      <button class="act" onclick="toast('Reverse-nudge 10 cm…')"><span class="ai">↺</span> Reverse-nudge (manual) <span class="k">⌫</span></button>
+      <button class="act" onclick="resumeFromCollision()"><span class="ai">▶</span> Resume autonomy <span class="k">␣</span></button>
+    </div>
+    <div class="ackbar"><button class="ackbtn" onclick="acknowledge()">ACKNOWLEDGE</button><span class="hint">Robot stays halted; banner persists until current clears and you reset.</span></div>`;
+  S.paused=true; $('modalVeil').classList.add('show'); logLedger('COLLISION — auto-halt'); toast('Collision — robot auto-halted');
+}
+function resumeFromCollision(){ closeModalToBanner(); markSafe(); }
+function actRetreat(){ S.mode='retreat'; closeModalToBanner(); toast('Retreating along safe traveled path…'); }
+function actHold(){ S.paused=true; closeModalToBanner(); toast('Holding position — continuing to sample'); }
+function actManual(){ setMode('manual'); closeModalToBanner(); }
+function acknowledge(){ closeModalToBanner(); }
+function closeModalToBanner(){
+  if(!S.alarm) return; S.alarm.acked=true;
+  $('modalVeil').classList.remove('show');
+  const isGas=S.alarm.type==='gas';
+  $('bannerIco').textContent=isGas?'☣':'⊘';
+  $('bannerTitle').textContent=isGas?'HAZARD ACTIVE — CH₄':'COLLISION — ROBOT HALTED';
+  $('bannerSub').textContent=isGas?('Above 90 (0–110 scale) · acknowledged '+now()):'Verify motor current cleared before reset';
+  $('banner').classList.add('show'); $('banner').classList.remove('cleared');
+  $('resetBtn').disabled=true; $('resetBtn').textContent=isGas?'Reset · awaiting safe levels':'Reset · verify clear first';
+  toast('Acknowledged & logged — flashing stopped, hazard remains as banner');
+}
+function reopenModal(){ if(S.alarm) $('modalVeil').classList.add('show'); }
+function markSafe(){
+  if(!S.alarm)return; S.alarm.safe=true;
+  const banner=$('banner'); banner.classList.add('cleared'); $('bannerIco').textContent='✓';
+  $('bannerTitle').textContent = S.alarm.type==='gas'?'CH₄ BELOW THRESHOLD':'MOTOR CURRENT CLEARED';
+  $('bannerSub').textContent='Condition resolved — safe to reset';
+  $('resetBtn').disabled=false; $('resetBtn').textContent='Reset / clear hazard';
+  if(S.alarm.type==='collision'){ S.paused=false; S.motorL=1.0; }
+  toast(S.alarm.type==='gas'?'Gas fell below 60 — reset enabled':'Motor current back to baseline — reset enabled');
+}
+function markUnsafe(){ if(!S.alarm)return; S.alarm.safe=false; const b=$('banner'); b.classList.remove('cleared'); $('bannerIco').textContent='☣'; $('bannerTitle').textContent='HAZARD ACTIVE — CH₄'; $('bannerSub').textContent='Levels rose again above threshold'; $('resetBtn').disabled=true; $('resetBtn').textContent='Reset · awaiting safe levels'; }
+function resetHazard(){
+  if(!S.alarm||!S.alarm.safe){ toast('Cannot reset — condition still active'); return; }
+  logLedger((S.alarm.type==='gas'?'CH₄ hazard':'Collision')+' cleared & reset');
+  $('banner').classList.remove('show','cleared'); S.alarm=null; if(S.mode==='retreat')S.mode='auto';
+  toast('Hazard cleared & dismissed — event archived to ledger');
+}
+// modal hotkeys
+window.addEventListener('keydown',e=>{
+  if(!$('modalVeil').classList.contains('show'))return; const k=e.key.toLowerCase();
+  if(S.alarm&&S.alarm.type==='gas'){ if(k==='r')actRetreat(); if(k==='h')actHold(); if(k==='m')actManual(); }
+});
+
+/* ---------- Link loss ---------- */
+let reconnT;
+function injectLinkLoss(){
+  if(!$('app').classList.contains('live'))return;
+  S.frozen=true; $('frozenGas').textContent=Math.round(S.ch4)+' ppm'; $('frozenPose').textContent='x '+(S.pose.x/100).toFixed(1)+' y '+(S.pose.y/100).toFixed(1);
+  $('frozenVeil').classList.add('show'); renderNodes();
+  $('chipLink').className='chip hazard'; $('chipLink').innerHTML='<span class="dot"></span> LINK LOST';
+  let n=1; clearInterval(reconnT); reconnT=setInterval(()=>{ n++; $('reconnectMsg').textContent='Reconnecting… attempt '+n+' · Zenoh session OPENING'; },2000);
+  logLedger('map→odom stale — watchdog asserted /estop'); toast('Link lost — data frozen, /estop asserted');
+}
+function forceReconnect(){
+  clearInterval(reconnT); S.frozen=false; $('frozenVeil').classList.remove('show'); renderNodes();
+  $('chipLink').className='chip info'; logLedger('Zenoh link restored — resynced'); toast('Link restored — resynced'); updateHUD();
+}
+
+/* ---------- sim controls ---------- */
+function togglePause(){ S.paused=!S.paused; $('pauseBtn').textContent=S.paused?'▶ Resume':'⏸ Pause'; }
+function injectGas(){ S._spike=true; toast('Injecting CH₄ spike at source…'); setTimeout(()=>S._spike=false,9000); }
+
+/* ---------- demo hook (for headless screenshots): #demo skips boot, seeds a populated map ---------- */
+if(location.hash.includes('demo')){
+  enterCockpit();
+  // pre-reveal an explored swath along the tour
+  TOUR.forEach((p,i)=>{ for(let k=0;k<=10;k++){ const n=TOUR[(i+1)%TOUR.length]; reveal(p.x+(n.x-p.x)*k/10, p.y+(n.y-p.y)*k/10, 70); S.traj.push({x:p.x,y:p.y}); } });
+  S.coverage=0.52; S.tourIdx=7; S.pose={x:700,y:240,th:0}; S.ch4=72;
+  S.waypoints=[{x:840,y:380},{x:600,y:460}]; renderWaypoints();
+  S.ch4Hist=Array.from({length:60},(_,i)=>15+i*0.9+Math.random()*6);
+  S.latHist=Array.from({length:40},()=>16+Math.random()*10);
+  $('drawer').classList.add('open');
+  S.paused=true;                          // freeze for a stable screenshot
+  updateHUD();
+  if(location.hash.includes('alarm')){ S.ch4=104; updateHUD(); fireHazard(); }
+}
+</script>
+
+<!-- ════════ LIVE ROS 2 LAYER ════════
+     roslib.js + ros-bindings.js turn the simulation above into a live console. If rosbridge
+     isn't reachable (or roslib isn't vendored yet) the page silently stays in SIM mode, so it
+     still opens for design review. Vendor roslib once: see web/vendor/README.md. -->
+<script src="vendor/roslib.min.js" onerror="window.__noRoslib=true"></script>
+<script src="ros-bindings.js"></script>
+</body>
+</html>
