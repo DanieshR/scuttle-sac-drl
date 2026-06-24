@@ -178,9 +178,9 @@
     const el = document.getElementById('sacState');
     if (el) el.title = txt;
   }
-  topic('/mission/state/pi', 'std_msgs/msg/String', { throttle_rate: 0 })
+  topic('/mission/state/pi', 'std_msgs/msg/String', { throttle_rate: 0, latch: true })
     .subscribe(m => { missionState.pi = m.data; showMissionState(); });
-  topic('/mission/state/laptop', 'std_msgs/msg/String', { throttle_rate: 0 })
+  topic('/mission/state/laptop', 'std_msgs/msg/String', { throttle_rate: 0, latch: true })
     .subscribe(m => { missionState.laptop = m.data; showMissionState(); });
 
   // Save maps: publish the chosen path, then call the Trigger; toast the returned folder.
@@ -189,6 +189,7 @@
   });
   window.saveMaps = function (path) {
     if (!S.live) { toast('Save needs a live connection'); return; }
+    if (!path || !path.trim()) { toast('Enter a save path first'); return; }
     if (path) savePathPub.publish(new ROSLIB.Message({ data: path }));
     setTimeout(() => saveSrv.callService(new ROSLIB.ServiceRequest({}), res => {
       toast(res.success ? ('Maps saved → ' + res.message) : ('Save failed: ' + res.message));

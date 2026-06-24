@@ -262,7 +262,7 @@
         <canvas id="mapCanvas"></canvas>
         <div class="map-overlay-tl">
           <span class="chip auto" id="mapSac"><span class="dot"></span> Frontier exploring</span>
-          <button class="btn" id="btnHeat" onclick="S.showHeatmap=!S.showHeatmap;this.classList.toggle('on',S.showHeatmap);if(window.toggleHeatmap)window.toggleHeatmap(S.showHeatmap);">Gas heatmap</button>
+          <button class="btn" id="btnHeat" onclick="if(window.toggleHeatmap){window.toggleHeatmap(!S.showHeatmap);this.classList.toggle('on',S.showHeatmap);}">Gas heatmap</button>
           <span class="chip info" id="mapCov"><span class="dot"></span> 0% mapped</span>
         </div>
         <div class="layerctl">
