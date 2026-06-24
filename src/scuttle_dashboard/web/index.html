@@ -206,12 +206,12 @@
   <div class="statusbar">
     <span class="robot-id"><span class="live-dot"></span> SCUTTLE-03</span>
     <span class="chip info" id="chipLink"><span class="dot"></span> LINK 18ms</span>
-    <span class="chip auto" id="chipMode"><span class="dot"></span> AUTONOMOUS · FRONTIER</span>
+    <span class="chip info" id="chipMode"><span class="dot"></span> MANUAL TELEOP</span>
     <span class="chip safe" id="chipGas"><span class="dot"></span> CH₄ nominal</span>
     <span class="spacer"></span>
     <div class="mode-toggle">
-      <button id="mManual" onclick="setMode('manual')">MANUAL TELEOP</button>
-      <button id="mAuto" class="on autom" onclick="setMode('auto')">AUTONOMOUS (FRONTIER)</button>
+      <button id="mManual" class="on" onclick="setMode('manual')">MANUAL TELEOP</button>
+      <button id="mAuto" onclick="setMode('auto')">AUTONOMOUS (FRONTIER)</button>
     </div>
     <button class="estop" onclick="fireEstop()">⬣ E-STOP<span class="bind">SPACE×2 · CTRL+.</span></button>
   </div>
@@ -297,8 +297,8 @@
         <div class="stat"><span>Coverage (/map)</span><span class="v" id="sacCov">0%</span></div>
       </div>
       <div class="card">
-        <h4>Teleop <span class="uplabel" id="teleHint">disabled in autonomous</span></h4>
-        <div class="joystick disabled" id="joy"><div class="ring"></div><div class="nub" id="nub"></div></div>
+        <h4>Teleop <span class="uplabel" id="teleHint">live</span></h4>
+        <div class="joystick" id="joy"><div class="ring"></div><div class="nub" id="nub"></div></div>
         <div class="vw"><span id="vwV">v 0.00 m/s</span><span id="vwW">ω 0.00 rad/s</span></div>
         <div class="keyleg">
           <div></div><div class="key" id="kW">W</div><div></div>
@@ -435,7 +435,7 @@ const TOUR = [
 
 /* ---------- State ---------- */
 const S = {
-  mode:'auto', showHeatmap:true, mapTheme:'dark', frontiers:[], paused:false, connected:true, estop:false, live:false,
+  mode:'manual', showHeatmap:true, mapTheme:'dark', frontiers:[], paused:false, connected:true, estop:false, live:false,
   scan:null, gasGrid:null,                    // live: LaserScan + GMRF grid (set by ros-bindings.js)
   pose:{x:120,y:250,th:0}, tourIdx:0, dir:1, frozen:false,
   vel:{v:0,w:0}, manual:{v:0,w:0},
@@ -688,7 +688,7 @@ function startBoot(){
   ];
   seq.forEach(([t,w,m,fn])=>bootT.push(setTimeout(()=>{bar.style.width=w; st.textContent=m; if(fn)fn();},t)));
 }
-function enterCockpit(){ $('boot').style.display='none'; $('app').classList.add('live'); updateHUD(); toast('Attached to SCUTTLE-03 · autonomous frontier exploration active'); }
+function enterCockpit(){ $('boot').style.display='none'; $('app').classList.add('live'); updateHUD(); toast('Attached to SCUTTLE-03 · manual teleop (frontier paused) — toggle AUTONOMOUS to explore'); }
 startBoot();
 
 /* ---------- Mode ---------- */
