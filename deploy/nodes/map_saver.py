@@ -17,7 +17,8 @@ from datetime import datetime
 
 def resolve_save_dir(base_path, now=None):
     """<base or ~/scuttle_maps>/<YYYYmmdd-HHMMSS>, with ~ expanded."""
-    now = now or datetime.now()
+    if now is None:
+        now = datetime.now()
     base = base_path if base_path else os.path.join(os.path.expanduser('~'), 'scuttle_maps')
     base = os.path.expanduser(base)
     return os.path.join(base, now.strftime('%Y%m%d-%H%M%S'))
@@ -56,7 +57,10 @@ def main(argv=None):
                '-r', f'map:={topic}',
                '-p', 'map_subscribe_transient_local:=true',
                '-p', 'save_map_timeout:=10.0']
-        return subprocess.run(cmd, timeout=30).returncode == 0
+        try:
+            return subprocess.run(cmd, timeout=30).returncode == 0
+        except (subprocess.TimeoutExpired, OSError):
+            return False
 
     class MapSaver(Node):
         def __init__(self):
@@ -91,10 +95,13 @@ def main(argv=None):
                 rows = grid_to_csv_rows(info.width, info.height, info.resolution,
                                         info.origin.position.x, info.origin.position.y,
                                         list(self._grid.data))
-                with open(os.path.join(out_dir, 'gmrf_gas.csv'), 'w') as f:
-                    f.write('x_m,y_m,value\n')
-                    for x, y, v in rows:
-                        f.write(f'{x:.3f},{y:.3f},{v}\n')
+                try:
+                    with open(os.path.join(out_dir, 'gmrf_gas.csv'), 'w') as f:
+                        f.write('x_m,y_m,value\n')
+                        for x, y, v in rows:
+                            f.write(f'{x:.3f},{y:.3f},{v}\n')
+                except OSError as e:
+                    self.get_logger().warn(f'gmrf_gas.csv write failed: {e}')
 
             response.success = bool(ok_slam)
             response.message = out_dir if ok_slam else f'{out_dir} (SLAM save failed)'
