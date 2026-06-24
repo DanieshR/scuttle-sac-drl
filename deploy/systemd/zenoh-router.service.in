@@ -1,0 +1,12 @@
+[Unit]
+Description=rmw_zenoh router (base station)
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/bin/bash -lc 'set +u; source /opt/ros/jazzy/setup.bash; source __WS__/install/setup.bash; exec ros2 run rmw_zenoh_cpp rmw_zenohd'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

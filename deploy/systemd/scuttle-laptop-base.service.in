@@ -1,0 +1,13 @@
+[Unit]
+Description=SCUTTLE laptop base (SLAM + GDM + dashboard + mission)
+After=zenoh-router.service network-online.target
+Wants=zenoh-router.service
+
+[Service]
+Type=simple
+ExecStart=/bin/bash -lc 'set +u; source /opt/ros/jazzy/setup.bash; source __WS__/install/setup.bash; source __WS__/deploy/scripts/zenoh-env.sh base; exec ros2 launch __WS__/deploy/launch/laptop_base.launch.py'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

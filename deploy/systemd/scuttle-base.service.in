@@ -1,0 +1,14 @@
+[Unit]
+Description=SCUTTLE base (hardware + mission supervisor)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+ExecStart=/bin/bash -lc 'set +u; source /opt/ros/jazzy/setup.bash; source __WS__/install/setup.bash; source __WS__/deploy/scripts/zenoh-env.sh pi __LAPTOP_IP__; exec ros2 launch __WS__/deploy/launch/pi_base.launch.py'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
