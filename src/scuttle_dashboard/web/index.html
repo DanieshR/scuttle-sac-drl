@@ -263,6 +263,7 @@
         <div class="map-overlay-tl">
           <span class="chip auto" id="mapSac"><span class="dot"></span> Frontier exploring</span>
           <button class="btn" id="btnHeat" onclick="if(window.toggleHeatmap){window.toggleHeatmap(!S.showHeatmap);this.classList.toggle('on',S.showHeatmap);}">Gas heatmap</button>
+          <button class="btn" id="btnMapTheme" onclick="if(window.setMapTheme){var t=S.mapTheme==='light'?'dark':'light';window.setMapTheme(t);this.textContent='Map: '+(t==='light'?'White':'Dark');}">Map: Dark</button>
           <span class="chip info" id="mapCov"><span class="dot"></span> 0% mapped</span>
         </div>
         <div class="layerctl">
@@ -272,6 +273,7 @@
           <label><input type="checkbox" id="lTraj" checked> Trajectory</label>
           <label><input type="checkbox" id="lWp" checked> Waypoints</label>
           <label><input type="checkbox" id="lScan" checked> Lidar scan</label>
+          <label><input type="checkbox" id="lFront" checked> Frontiers</label>
         </div>
         <div class="crosshair-tip" id="xtip"></div>
         <div class="scalebar">1 m<div class="bar"></div></div>
@@ -433,7 +435,7 @@ const TOUR = [
 
 /* ---------- State ---------- */
 const S = {
-  mode:'auto', showHeatmap:true, paused:false, connected:true, estop:false, live:false,
+  mode:'auto', showHeatmap:true, mapTheme:'dark', frontiers:[], paused:false, connected:true, estop:false, live:false,
   scan:null, gasGrid:null,                    // live: LaserScan + GMRF grid (set by ros-bindings.js)
   pose:{x:120,y:250,th:0}, tourIdx:0, dir:1, frozen:false,
   vel:{v:0,w:0}, manual:{v:0,w:0},
@@ -574,6 +576,8 @@ function draw(){
       ctx.closePath(); ctx.fill();
     }
   }
+  // frontier exploration points (explore_lite explore/frontiers) — live only, under the robot
+  if($('lFront') && $('lFront').checked && S.live && typeof paintFrontiers==='function') paintFrontiers(ctx);
   // source marker when hazardous
   if(S.ch4>90){ ctx.fillStyle=css('--color-hazard'); ctx.beginPath(); ctx.arc(GAS_SOURCE.x,GAS_SOURCE.y,4,0,7); ctx.fill(); }
   // robot

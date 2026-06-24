@@ -118,6 +118,28 @@
     topic('/gdm/gmrf_gas_map', 'nav_msgs/msg/OccupancyGrid', { throttle_rate: 1000 })
       .subscribe(g => { S.gasGrid = g; });
 
+    /* Frontier markers — explore_lite publishes visualization_msgs/MarkerArray on
+       explore/frontiers (map frame): per frontier a POINTS marker (blue cell cloud,
+       red if blacklisted) + a SPHERE at the centroid (green). Only present in frontier
+       mode; absent in manual/idle. We flatten to {kind,rgb,pts} for paintFrontiers(). */
+    topic('/explore/frontiers', 'visualization_msgs/msg/MarkerArray', { throttle_rate: 250 })
+      .subscribe(arr => {
+        const out = [];
+        for (const mk of (arr.markers || [])) {
+          if (mk.action === 2) continue;                          // DELETE marker
+          const col = mk.color || {};
+          const rgb = [Math.round((col.r || 0) * 255),
+                       Math.round((col.g || 0) * 255),
+                       Math.round((col.b || 0) * 255)];
+          if (mk.type === 8 && mk.points && mk.points.length) {   // POINTS: frontier cells
+            out.push({ kind: 'points', rgb, pts: mk.points.map(p => ({ x: p.x, y: p.y })) });
+          } else if (mk.type === 2 && mk.pose && mk.pose.position) {  // SPHERE: centroid
+            out.push({ kind: 'centroid', rgb, pts: [{ x: mk.pose.position.x, y: mk.pose.position.y }] });
+          }
+        }
+        S.frontiers = out;
+      });
+
     /* Diagnostics — /diagnostics → System / Network / Nodes drawer. */
     topic('/diagnostics', 'diagnostic_msgs/msg/DiagnosticArray').subscribe(arr => {
       for (const st of arr.status) {
@@ -218,7 +240,23 @@
   // Captured from the live /map OccupancyGrid (origin + resolution). Fits the grid into the
   // 960×600 canvas with a margin and flips Y (ROS +y up → canvas +y down).
   let MX = null;   // {ox,oy,res,scale,offX,offY,pxH}
+  let lastGrid = null;   // cache so a theme switch repaints without waiting for the next /map
+
+  // Map palette. 'dark' = the cockpit theme (reads CSS vars, unchanged). 'light' = RViz-style
+  // white free / gray unknown / near-black walls. Operator picks via window.setMapTheme.
+  function mapPalette() {
+    if (S.mapTheme === 'light')
+      return { free: [255, 255, 255], unk: [205, 205, 205], occ: [30, 30, 30], bg: [205, 205, 205] };
+    return { free: hexRGB(css('--map-free')), unk: hexRGB(css('--map-unknown')),
+             occ: hexRGB(css('--map-occupied')), bg: hexRGB(css('--map-bg')) };
+  }
+  window.setMapTheme = function (theme) {
+    S.mapTheme = theme === 'light' ? 'light' : 'dark';
+    if (lastGrid) paintOccupancy(lastGrid);   // instant repaint with the new palette
+  };
+
   function paintOccupancy(grid) {
+    lastGrid = grid;
     const info = grid.info, gw = info.width, gh = info.height, res = info.resolution;
     const ox = info.origin.position.x, oy = info.origin.position.y;
     const scale = Math.min(960 / (gw * res), 600 / (gh * res)) * 0.96;
@@ -228,13 +266,13 @@
     // Render the grid into a gw×gh offscreen, then blit scaled (with Y flip) into `base`.
     const tmp = document.createElement('canvas'); tmp.width = gw; tmp.height = gh;
     const tctx = tmp.getContext('2d'); const img = tctx.createImageData(gw, gh);
-    const free = hexRGB(css('--map-free')), occ = hexRGB(css('--map-occupied')), unk = hexRGB(css('--map-unknown'));
+    const pal = mapPalette(), free = pal.free, occ = pal.occ, unk = pal.unk;
     for (let i = 0; i < grid.data.length; i++) {
       const v = grid.data[i], c = v < 0 ? unk : v >= 65 ? occ : free, j = i * 4;
       img.data[j] = c[0]; img.data[j + 1] = c[1]; img.data[j + 2] = c[2]; img.data[j + 3] = 255;
     }
     tctx.putImageData(img, 0, 0);
-    bctx.fillStyle = css('--map-bg'); bctx.fillRect(0, 0, 960, 600);
+    bctx.fillStyle = `rgb(${pal.bg[0]},${pal.bg[1]},${pal.bg[2]})`; bctx.fillRect(0, 0, 960, 600);
     bctx.save();
     bctx.translate(MX.offX, MX.offY + pxH); bctx.scale(1, -1);   // flip Y so row 0 = bottom
     bctx.imageSmoothingEnabled = false;
@@ -322,6 +360,23 @@
       const c = worldToCanvas(ox + (gx + 0.5) * res, oy + (gy + 0.5) * res); if (!c) continue;
       ctx.fillStyle = inferno(t, 0.15 + t * 0.55);
       ctx.fillRect(c.x - cell / 2, c.y - cell / 2, cell + 1, cell + 1);
+    }
+  };
+
+  // Frontier markers: blue/red cell clouds (POINTS) as small dots, green centroids (SPHERE)
+  // as ringed dots — the same information RViz shows for the explore/frontiers MarkerArray.
+  window.paintFrontiers = function (ctx) {
+    if (!MX || !S.frontiers || !S.frontiers.length) return;
+    for (const f of S.frontiers) {
+      if (f.kind === 'points') {
+        ctx.fillStyle = `rgba(${f.rgb[0]},${f.rgb[1]},${f.rgb[2]},0.7)`;
+        for (const p of f.pts) { const c = worldToCanvas(p.x, p.y); if (c) ctx.fillRect(c.x - 1, c.y - 1, 2, 2); }
+      } else {                                   // centroid sphere
+        const c = worldToCanvas(f.pts[0].x, f.pts[0].y); if (!c) continue;
+        ctx.fillStyle = `rgb(${f.rgb[0]},${f.rgb[1]},${f.rgb[2]})`;
+        ctx.beginPath(); ctx.arc(c.x, c.y, 4, 0, 7); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 1; ctx.stroke();
+      }
     }
   };
 
