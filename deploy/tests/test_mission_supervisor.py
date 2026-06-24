@@ -1,5 +1,3 @@
-import time
-
 from mission_supervisor import decide_action, ProcessManager
 
 
@@ -16,7 +14,9 @@ def test_process_manager_start_and_stop():
     assert pm.running is False
     pm.start()
     assert pm.running is True
+    proc_before = pm.proc
     pm.start()                       # idempotent — no second process
+    assert pm.proc is proc_before
     assert pm.running is True
     pm.stop(sigint_timeout=5.0, sigterm_timeout=2.0)
     assert pm.running is False

@@ -15,6 +15,7 @@ import argparse
 import os
 import signal
 import subprocess
+import threading
 import time
 
 
@@ -87,6 +88,8 @@ def main(argv=None):
     class MissionSupervisor(Node):
         def __init__(self):
             super().__init__(f'mission_supervisor_{args.role}')
+            self._role = args.role
+            self._lock = threading.Lock()
             self.pm = ProcessManager(['ros2', 'launch', args.launch_file])
             self.state_pub = self.create_publisher(String, args.state_topic, latched)
             self.create_subscription(String, args.mode_topic, self._on_mode, latched)
@@ -96,17 +99,24 @@ def main(argv=None):
             self.state_pub.publish(String(data=s))
 
         def _on_mode(self, msg):
-            action = decide_action(self.pm.running, msg.data.strip())
-            if action == 'start':
-                self.get_logger().info(f'[{args.role}] frontier requested -> launching')
-                self._publish_state('frontier:starting')
-                self.pm.start()
-                self._publish_state('frontier:up')
-            elif action == 'stop':
-                self.get_logger().info(f'[{args.role}] manual requested -> tearing down')
-                self._publish_state('frontier:stopping')
-                self.pm.stop()
-                self._publish_state('idle')
+            requested = msg.data.strip()
+            action = decide_action(self.pm.running, requested)
+            if action == 'noop':
+                return
+            threading.Thread(target=self._apply, args=(action, requested), daemon=True).start()
+
+        def _apply(self, action, requested):
+            with self._lock:
+                if action == 'start':
+                    self.get_logger().info(f'[{self._role}] frontier requested -> launching')
+                    self._publish_state('frontier:starting')
+                    self.pm.start()
+                    self._publish_state('frontier:launched')
+                else:
+                    self.get_logger().info(f'[{self._role}] mode={requested!r} requested -> tearing down')
+                    self._publish_state('frontier:stopping')
+                    self.pm.stop()
+                    self._publish_state('idle')
 
     rclpy.init(args=argv)
     node = MissionSupervisor()
