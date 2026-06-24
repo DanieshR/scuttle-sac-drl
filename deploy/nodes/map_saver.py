@@ -49,8 +49,9 @@ def main(argv=None):
                          reliability=QoSReliabilityPolicy.RELIABLE,
                          durability=QoSDurabilityPolicy.TRANSIENT_LOCAL)
 
-    def save_one(topic, stem, out_dir):
-        """map_saver_cli for a single OccupancyGrid topic; returns True on success."""
+    def save_one(topic, stem, out_dir, logger=None):
+        """map_saver_cli for a single OccupancyGrid topic; returns True on success.
+        Captures stderr and logs it on failure so a hardware bring-up has a breadcrumb."""
         cmd = ['ros2', 'run', 'nav2_map_server', 'map_saver_cli',
                '-f', os.path.join(out_dir, stem),
                '--ros-args',
@@ -58,8 +59,14 @@ def main(argv=None):
                '-p', 'map_subscribe_transient_local:=true',
                '-p', 'save_map_timeout:=10.0']
         try:
-            return subprocess.run(cmd, timeout=30).returncode == 0
-        except (subprocess.TimeoutExpired, OSError):
+            r = subprocess.run(cmd, timeout=30, capture_output=True, text=True)
+            if r.returncode != 0 and logger is not None:
+                logger.warn(f'map_saver_cli {topic} failed (rc={r.returncode}): '
+                            f'{(r.stderr or "").strip()[:500]}')
+            return r.returncode == 0
+        except (subprocess.TimeoutExpired, OSError) as e:
+            if logger is not None:
+                logger.warn(f'map_saver_cli {topic} error: {e}')
             return False
 
     class MapSaver(Node):
@@ -87,9 +94,11 @@ def main(argv=None):
                 response.message = f'cannot create {out_dir}: {e}'
                 return response
 
-            ok_slam = save_one('/map', 'slam_map', out_dir)
-            ok_gas = save_one('/gdm/gmrf_gas_map', 'gmrf_gas_map', out_dir)
+            log = self.get_logger()
+            ok_slam = save_one('/map', 'slam_map', out_dir, log)
+            ok_gas = save_one('/gdm/gmrf_gas_map', 'gmrf_gas_map', out_dir, log)
 
+            csv_ok = False
             if self._grid is not None:
                 info = self._grid.info
                 rows = grid_to_csv_rows(info.width, info.height, info.resolution,
@@ -100,12 +109,19 @@ def main(argv=None):
                         f.write('x_m,y_m,value\n')
                         for x, y, v in rows:
                             f.write(f'{x:.3f},{y:.3f},{v}\n')
+                    csv_ok = True
                 except OSError as e:
-                    self.get_logger().warn(f'gmrf_gas.csv write failed: {e}')
+                    log.warn(f'gmrf_gas.csv write failed: {e}')
 
+            # success is keyed on the SLAM map (the primary artifact), but the
+            # message reports every artifact so the dashboard toast cannot
+            # over-promise gas files that silently failed.
+            status = (f'slam={"ok" if ok_slam else "FAIL"}, '
+                      f'gas={"ok" if ok_gas else "FAIL"}, '
+                      f'csv={"ok" if csv_ok else "skip"}')
             response.success = bool(ok_slam)
-            response.message = out_dir if ok_slam else f'{out_dir} (SLAM save failed)'
-            self.get_logger().info(f'saved maps -> {out_dir} (slam={ok_slam}, gas={ok_gas})')
+            response.message = f'{out_dir} [{status}]'
+            log.info(f'saved maps -> {out_dir} ({status})')
             return response
 
     rclpy.init(args=argv)

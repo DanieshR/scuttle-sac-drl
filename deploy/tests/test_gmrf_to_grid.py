@@ -1,4 +1,4 @@
-from gmrf_to_grid import parse_mean_csv, mean_to_int8, flatten_occupancy
+from gmrf_to_grid import parse_mean_csv, mean_to_int8, flatten_occupancy, snap_origin
 
 
 def test_parse_mean_csv_basic():
@@ -9,6 +9,18 @@ def test_parse_mean_csv_basic():
 def test_parse_mean_csv_handles_nan_and_blanks():
     rows = parse_mean_csv("nan, ,0.25")
     assert rows == [[None, None, 0.25]]
+
+
+def test_snap_origin_matches_gmrf_anchor():
+    # GMRF anchors at cell_size*round(min/cell_size) (gmrf_map.cpp).
+    assert snap_origin(0.0, 0.5) == 0.0
+    assert snap_origin(0.24, 0.5) == 0.0      # rounds down to nearest 0.5
+    assert snap_origin(0.26, 0.5) == 0.5      # rounds up to nearest 0.5
+    assert snap_origin(-1.3, 0.5) == -1.5     # negative origin snaps too
+    assert snap_origin(2.5, 0.5) == 2.5       # already aligned stays put
+    # half-away-from-zero like C++ std::round, not Python banker's rounding:
+    assert snap_origin(0.25, 0.5) == 0.5      # 0.5 boundary rounds up (not 0.0)
+    assert snap_origin(-0.25, 0.5) == -0.5    # symmetric for negatives
 
 
 def test_mean_to_int8_scales_and_clamps():

@@ -45,6 +45,22 @@ def mean_to_int8(mean):
     return max(0, min(100, int(round(mean * 100.0))))
 
 
+def snap_origin(coord, cell_size):
+    """Snap a /map origin coordinate to GMRF's grid anchor.
+
+    GMRF builds its grid anchored at cell_size*round(min/cell_size) (see
+    gmrf_map.cpp m_x_min/m_y_min), NOT the raw /map origin. The bridge must
+    publish the SAME anchored origin or the heatmap is offset from the real
+    gas field by up to cell_size/2.
+
+    C++ std::round() rounds half away from zero; Python's round() is banker's
+    rounding. Match the C++ so an origin landing exactly on a half-cell does
+    not snap one cell the wrong way."""
+    n = coord / cell_size
+    snapped = math.floor(n + 0.5) if n >= 0 else math.ceil(n - 0.5)
+    return cell_size * snapped
+
+
 def flatten_occupancy(rows, flip_vertical=True):
     """Row-major OccupancyGrid.data + (width, height).
 
@@ -118,8 +134,8 @@ def main(argv=None):
             g.info.resolution = self._cell
             g.info.width = w
             g.info.height = h
-            g.info.origin.position.x = self._origin[0]
-            g.info.origin.position.y = self._origin[1]
+            g.info.origin.position.x = snap_origin(self._origin[0], self._cell)
+            g.info.origin.position.y = snap_origin(self._origin[1], self._cell)
             g.info.origin.orientation.w = 1.0
             g.data = data
             self.pub.publish(g)
