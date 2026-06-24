@@ -27,7 +27,7 @@ slam_toolbox:
     debug_logging: false
     throttle_scans: 1
     transform_publish_period: 0.05 #if 0 never publishes odometry
-    map_update_interval: 2.0
+    map_update_interval: 1.0  # laptop has compute headroom (offloaded from Pi); 2.0 was conservative
     resolution: 0.05
     max_laser_range: 10.0 #for rastering images
     minimum_time_interval: 0.1
@@ -74,4 +74,4 @@ slam_toolbox:
     use_response_expansion: true
     min_pass_through: 2
     occupancy_threshold: 0.1
-    ceres_num_threads: 4
+    ceres_num_threads: 8  # Legion laptop has the cores; faster loop closure (was 4 for the Pi)
