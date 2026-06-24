@@ -100,19 +100,19 @@ def main(argv=None):
 
         def _on_mode(self, msg):
             requested = msg.data.strip()
-            action = decide_action(self.pm.running, requested)
-            if action == 'noop':
+            if decide_action(self.pm.running, requested) == 'noop':
                 return
-            threading.Thread(target=self._apply, args=(action, requested), daemon=True).start()
+            threading.Thread(target=self._apply, args=(requested,), daemon=True).start()
 
-        def _apply(self, action, requested):
+        def _apply(self, requested):
             with self._lock:
+                action = decide_action(self.pm.running, requested)
                 if action == 'start':
                     self.get_logger().info(f'[{self._role}] frontier requested -> launching')
                     self._publish_state('frontier:starting')
                     self.pm.start()
                     self._publish_state('frontier:launched')
-                else:
+                elif action == 'stop':
                     self.get_logger().info(f'[{self._role}] mode={requested!r} requested -> tearing down')
                     self._publish_state('frontier:stopping')
                     self.pm.stop()
@@ -125,7 +125,8 @@ def main(argv=None):
     except KeyboardInterrupt:
         pass
     finally:
-        node.pm.stop()
+        with node._lock:
+            node.pm.stop()
         node.destroy_node()
         rclpy.shutdown()
 
