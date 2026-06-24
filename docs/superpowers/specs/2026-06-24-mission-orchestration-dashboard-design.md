@@ -32,14 +32,26 @@ two machines (see `deploy/launch/`). The operator wants:
 
 ## Integration gap (must fix)
 
-`gmrf_node` (gmrf_node.cpp:193) publishes `mean_map` / `var_map` as
-`sensor_msgs/PointCloud2`, **not** an `OccupancyGrid` named `/gdm/gmrf_gas_map`. The
-dashboard heatmap, the show/hide toggle, and the GDM map-save all need a 2D grid.
+`gmrf_node` publishes **nothing on any topic**. The PointCloud2 publish path in
+`publishMaps()` (gmrf_node.cpp:184-195) is entirely commented out (ROS1-era API, never
+ported). Its only live output is `CGMRF_map::save_as_CSV()` (gmrf_map.cpp:788), which —
+when the `output_csv_folder` param is set — writes `GMRF_mean.csv` and `GMRF_std.csv`
+each exec cycle (~2 Hz): a row-major matrix of `m_size_y` rows × `m_size_x` cols, values
+normalized to [0,1], **no geometry** (origin/resolution not in the file). The dashboard
+heatmap (`ros-bindings.js:119`, subscribing `/gdm/gmrf_gas_map`) has therefore never had
+live data.
 
-**Resolution:** add a small **`gmrf_to_grid`** node (Python, rclpy) that subscribes to
-`mean_map` (PointCloud2) and republishes `/gdm/gmrf_gas_map` (`nav_msgs/OccupancyGrid`).
-Leaves the validated C++ `gmrf_node` untouched. One clean grid topic feeds both the
-dashboard heatmap and the map-saver.
+**Resolution (non-invasive — no C++ change):** add a **`gmrf_to_grid`** node (Python,
+rclpy) that:
+- watches `GMRF_mean.csv` in the configured `output_csv_folder` (gmrf_node writes it),
+- reads the matrix (cols = width, rows = height), scales mean [0,1] → [0,100],
+- takes resolution from gmrf's `cell_size` param (0.5) and **origin from the latest `/map`**
+  (the GMRF grid is initialized against the occupancy map, so it shares its origin),
+- publishes `/gdm/gmrf_gas_map` (`nav_msgs/OccupancyGrid`).
+
+This one clean grid topic feeds both the dashboard heatmap and the map-saver, and leaves
+the validated C++ `gmrf_node` untouched. (Alternative considered: port the commented-out
+C++ PointCloud2 publisher — rejected as it edits a working package for no gain here.)
 
 ## Mission control interface (over rosbridge / Zenoh)
 
@@ -71,9 +83,10 @@ Dashboard setMode('auto') ──pub──► /mission/mode ──(Zenoh)──�
 
 - **`deploy/launch/pi_base.launch.py`** = `pi_hardware_bringup` + `pi_mission_supervisor`.
 - **`deploy/launch/laptop_base.launch.py`** = `laptop_slam` + GDM (`map_throttle` +
-  `gmrf_node` + `gmrf_to_grid`) + `scuttle_dashboard` (rosbridge+web) +
-  `laptop_mission_supervisor` + `map_saver` node. (The zenoh router runs as its own
-  systemd service, started before this launch — see Autostart.)
+  `gmrf_node` with `output_csv_folder` set to a runtime dir + `gmrf_to_grid` watching that
+  CSV) + `scuttle_dashboard` (rosbridge+web) + `laptop_mission_supervisor` + `map_saver`
+  node. (The zenoh router runs as its own systemd service, started before this launch —
+  see Autostart.)
 
 ### Frontier toggle (spawned by supervisors, never run by hand)
 
@@ -161,8 +174,9 @@ that single physical action remains the operator's.
 
 - **Supervisor unit:** publish `/mission/mode` manual→frontier→manual; assert the target
   launch PID group appears then is reaped; assert `/mission/state` transitions.
-- **gmrf_to_grid:** feed a synthetic `mean_map` PointCloud2; assert a well-formed
-  `OccupancyGrid` on `/gdm/gmrf_gas_map` (origin/resolution/dims sane, values 0–100).
+- **gmrf_to_grid:** given a synthetic `GMRF_mean.csv` matrix + a reference `/map` origin,
+  assert the pure builder returns a well-formed `OccupancyGrid` (width=cols, height=rows,
+  resolution=cell_size, origin=map origin, values 0–100, NaN/blank→-1).
 - **map_saver:** set `/mission/save_path` to a temp dir, call Trigger; assert
   `slam_map.{pgm,yaml}` + `gmrf_gas_map.{pgm,yaml}` + `gmrf_gas.csv` exist under a timestamp.
 - **Autostart (reboot):** reboot both machines (no terminal); confirm `scuttle-base` (Pi),
