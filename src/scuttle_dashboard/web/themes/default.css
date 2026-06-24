@@ -1,0 +1,60 @@
+:root {
+  /* ── Neutrals — dark industrial cockpit shell ── */
+  --color-bg:        #0E1116;  /* app background, near-black blue-grey */
+  --color-surface:   #161B22;  /* rails, cards */
+  --color-elevated:  #1E252E;  /* hovered/active cards, drawer */
+  --color-border:    #2A323D;  /* dividers */
+  --color-text:      #E6EDF3;  /* primary readouts */
+  --color-text-muted:#9DA7B3;  /* labels, secondary */
+  --color-text-dim:  #5B6675;  /* tertiary / stale */
+
+  /* ── Status semantics (used sparingly so they keep meaning) ── */
+  --color-safe:    #3FB950;  /* nominal / green */
+  --color-caution: #D29922;  /* warning / amber */
+  --color-hazard:  #F85149;  /* critical / red — reserved for alarms */
+  --color-info:    #58A6FF;  /* live link / blue accent */
+  --color-auto:    #A371F7;  /* SAC / autonomous violet */
+
+  --color-safe-bg:    rgba(63,185,80,0.12);
+  --color-caution-bg: rgba(210,153,34,0.14);
+  --color-hazard-bg:  rgba(248,81,73,0.14);
+  --color-info-bg:    rgba(88,166,255,0.12);
+  --color-auto-bg:    rgba(163,113,247,0.14);
+
+  /* convenience aliases for shared snippets */
+  --color-primary:       var(--color-info);
+  --color-primary-hover: #6cb2ff;
+  --color-accent:        var(--color-auto);
+  --color-danger:        var(--color-hazard);
+  --color-success:       var(--color-safe);
+
+  /* ── Map canvas tones ── */
+  --map-bg:       #0A0D11;
+  --map-free:     #1B222B;  /* explored free space */
+  --map-unknown:  #11151A;  /* unexplored, muted */
+  --map-occupied: #3A4452;  /* walls */
+
+  /* ── Typography ── */
+  --font-sans: 'Inter', 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, monospace;
+  --text-xs:  0.6875rem;  /* 11px micro-labels */
+  --text-sm:  0.8125rem;  /* 13px body */
+  --text-base:0.875rem;   /* 14px */
+  --text-lg:  1rem;
+  --text-xl:  1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 2.25rem;    /* hero readout */
+
+  /* ── Spacing ── */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-12: 48px;
+
+  /* ── Shapes ── */
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px; --radius-full: 9999px;
+
+  /* ── Shadows / glows ── */
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,0.55);
+  --glow-hazard: 0 0 0 1px rgba(248,81,73,0.5), 0 0 24px rgba(248,81,73,0.35);
+  --glow-info:   0 0 0 1px rgba(88,166,255,0.4), 0 0 16px rgba(88,166,255,0.25);
+}

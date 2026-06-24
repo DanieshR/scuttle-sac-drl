@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>scuttle_dashboard</name>
+  <version>0.1.0</version>
+  <description>
+    Off-board web operator console for the SCUTTLE gas-detection AMR. Serves a single-page
+    HMI (occupancy map + GMRF gas heatmap, gas telemetry, frontier autonomy, teleop, E-STOP,
+    diagnostics) and bridges it to the live ROS 2 graph over rosbridge. Runs on the base-station
+    laptop alongside SLAM / frontier / GDM; sees the Pi's topics over the zenoh link.
+  </description>
+  <maintainer email="danieshrao29@gmail.com">Daniesh</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Launch system -->
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+
+  <!-- ROS 2 ↔ browser bridge. rosbridge_server provides the websocket; rosapi backs
+       ros.getNodes() used by the boot/discovery step. Install: sudo apt install ros-jazzy-rosbridge-suite -->
+  <exec_depend>rosbridge_server</exec_depend>
+  <exec_depend>rosapi</exec_depend>
+
+  <!-- tf2_web_republisher is NOT required: ros-bindings.js composes map→base_link client-side
+       from /tf + /tf_static, so no extra server is needed. -->
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
